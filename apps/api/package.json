@@ -1,0 +1,23 @@
+{
+  "name": "@mindforge/api",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MindForge API (Fastify)",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup src/server.ts --format esm,cjs --dts --clean",
+    "smoke": "tsx scripts/smoke.ts",
+    "start": "node dist/server.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "fastify": "latest",
+    "@mindforge/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

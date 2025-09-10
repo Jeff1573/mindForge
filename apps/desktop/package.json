@@ -1,0 +1,32 @@
+{
+  "name": "@mindforge/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MindForge Desktop (Tauri v2 + Vite + React)",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n web,tauri \"vite\" \"tauri dev\"",
+    "check": "vite build --emptyOutDir",
+    "tauri": "tauri",
+    "web": "vite",
+    "build:web": "vite build",
+    "preview": "vite preview",
+    "build": "tauri build",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "tailwind-merge": "latest"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@vitejs/plugin-react": "latest",
+    "concurrently": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}

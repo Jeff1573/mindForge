@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // 中文注释：UI 包需要显式包含 React 类型，否则 dts 生成会提示 JSX/IntrinsicElements 缺失
+    "outDir": "dist",
+    "types": ["node", "react", "react-dom"]
+  },
+  "include": ["src"]
+}

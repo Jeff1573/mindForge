@@ -1,0 +1,23 @@
+{
+  "name": "@mindforge/mcp-server",
+  "version": "0.1.0",
+  "private": false,
+  "description": "MindForge MCP Server（占位骨架）",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "start": "node dist/index.mjs",
+    "lint": "eslint ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}
+

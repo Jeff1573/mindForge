@@ -1,0 +1,40 @@
+{
+  "name": "mindforge",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MindForge monorepo (apps: desktop/api; packages: mcp-server/ui/shared)",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "smoke": "turbo run smoke --filter=@mindforge/api && pnpm --filter @mindforge/desktop check",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.15.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "latest",
+    "eslint-config-prettier": "latest",
+    "eslint-plugin-import": "latest",
+    "eslint-plugin-react": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "@types/node": "latest",
+    "prettier": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  },
+  "pnpm": {
+    "allowedBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

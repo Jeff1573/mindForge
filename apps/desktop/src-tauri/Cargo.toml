@@ -1,0 +1,13 @@
+[package]
+name = "mindforge"
+version = "0.1.0"
+description = "MindForge Desktop"
+authors = ["MindForge"]
+edition = "2021"
+
+[dependencies]
+# 中文注释：Tauri 2.x 无 `macros` 功能开关，此处去除并固定到 2.8.5 以匹配 CLI
+tauri = { version = "2.8.5" }
+
+[build-dependencies]
+tauri-build = { version = "2.8.5", features = [] }
