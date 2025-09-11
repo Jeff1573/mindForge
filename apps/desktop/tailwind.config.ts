@@ -1,3 +1,4 @@
+import defaultTheme from 'tailwindcss/defaultTheme';
 import type { Config } from 'tailwindcss';
 
 // 中文注释：将 CSS 变量（HSL 数值）映射为 Tailwind 语义色
@@ -11,6 +12,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         background: colorVar('--color-bg'),
         foreground: colorVar('--color-fg'),
@@ -48,3 +52,6 @@ export default {
   },
   plugins: [],
 } satisfies Config;
+
+
+

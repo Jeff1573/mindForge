@@ -37,6 +37,20 @@
     --radius-sm: 0.375rem; /* 6px */
     --radius-md: 0.5rem;   /* 8px */
     --radius-lg: 0.75rem;  /* 12px */
+
+    /* 布局与密度令牌（Phase 1） */
+ /* 默认标题栏高度，后续按平台覆写 */
+    --space-xs: 0.25rem; /* 4px */
+    --space-sm: 0.5rem;  /* 8px */
+    --space-md: 0.75rem; /* 12px */
+    --space-lg: 1rem;    /* 16px */
+    --density: 1;        /* 密度系数：1=默认，>1 更疏，<1 更紧凑（占位） */
+
+    /* 字体令牌（含中英混排回退） */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC';
+
+    /* 控件高度（输入/按钮等），可按平台覆写 */
+    --control-height: 2.5rem; /* 40px */
   }
 
   /* 深色主题覆盖（由 html[data-theme="dark"] 控制） */
@@ -64,19 +78,63 @@
     --color-ring: 217.2 91.2% 59.8%;
   }
 
+  /* 平台覆写层（Phase 2/Task 4 先行建立变量，具体组件稍后使用） */
+  html[data-platform="windows"] { --fx-blur: 6px; --panel-opacity: 0.8; --corner-radius: var(--radius-lg); --window-btn-gap: 0.25rem; }
+  html[data-platform="mac"] { --fx-blur: 8px; --panel-opacity: 0.72; --corner-radius: var(--radius-lg); --window-btn-gap: 0.375rem; }
+  html[data-platform="linux"] { --fx-blur: 0px; --panel-opacity: 0.8; --corner-radius: var(--radius-md); --window-btn-gap: 0.25rem; }
+  html[data-platform="mobile"] { --fx-blur: 0px; --panel-opacity: 0.92; --corner-radius: var(--radius-lg); --window-btn-gap: 0.25rem; --control-height: 2.75rem; }
+
   /* 全局重置与基线 */
   html, body, #root { height: 100%; }
   body {
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji");
     background-color: hsl(var(--color-bg));
     color: hsl(var(--color-fg));
+    overscroll-behavior: contain; /* 阻止外层滚动穿透，适配桌面与移动 */
+    scrollbar-gutter: stable both-edges; /* 避免出现/隐藏滚动条导致的抖动 */
   }
 
   /* 默认边框色与选区/焦点可达性 */
   * { border-color: hsl(var(--color-border)); }
   ::selection { background: hsl(var(--color-primary) / 0.18); }
   :focus-visible { outline: 2px solid hsl(var(--color-ring)); outline-offset: 2px; }
+
+  /* 可达性：减少动效偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* 强制颜色模式（Windows 高对比度）友好：保留描边与边框可见性 */
+  @media (forced-colors: active) {
+    :focus-visible { outline-color: Highlight; }
+    * { border-color: CanvasText; }
+  }
+}
+
+/* 滚动条样式（跨引擎尽量统一，允许近似差异） */
+:root {
+  scrollbar-color: hsl(var(--color-muted-foreground) / 0.5) transparent; /* Firefox */
+  scrollbar-width: thin; /* Firefox */
+}
+/* Chromium/WebKit */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--color-muted-foreground) / 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--color-muted-foreground) / 0.6); }
+
+/* 安全区（移动端刘海/圆角屏） */
+html[data-platform="mobile"] .safe-area {
+  padding-top: max(var(--space-sm), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  padding-left: max(var(--space-sm), env(safe-area-inset-left));
+  padding-right: max(var(--space-sm), env(safe-area-inset-right));
 }
 
 /* 组件与工具样式：用于聊天界面视觉（玻璃拟物 + 气泡） */
@@ -90,15 +148,16 @@
   }
   .toolbar {
     @apply h-10 sm:h-11 flex items-center gap-2 px-2 border-b border-border/60;
-    background-color: hsl(var(--color-bg) / 0.7);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background-color: hsl(var(--color-bg) / var(--panel-opacity));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .btn-ghost {
     @apply text-foreground/80 hover:text-foreground hover:bg-muted/70;
   }
   .input-base {
-    @apply h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50;
+    height: var(--control-height);
   }
 
   /* 页面浅色背景渐变 */
@@ -112,7 +171,7 @@
     /* 圆角走令牌；浅色与暗色有不同的透明度与边框 */
     @apply rounded-2xl shadow-xl backdrop-blur-md border;
     border-radius: var(--radius-lg);
-    background-color: hsl(var(--color-bg) / 0.7);
+    background-color: hsl(var(--color-bg) / var(--panel-opacity));
     border-color: hsl(var(--color-border) / 0.6);
   }
 
@@ -146,6 +205,20 @@
   }
 }
 
+/* 容器查询：在可用时基于容器宽度调整聊天气泡最大宽度 */
+@container layout (min-width: 640px) {
+  .bubble-in, .bubble-out { max-width: 70%; }
+}
+@container layout (min-width: 768px) {
+  .bubble-in, .bubble-out { max-width: 60%; }
+}
+@container layout (min-width: 1024px) {
+  .bubble-in, .bubble-out { max-width: 55%; }
+}
+@container layout (min-width: 1280px) {
+  .bubble-in, .bubble-out { max-width: 50%; }
+}
+
 /* Tauri 自定义标题栏拖拽区域控制 */
 .titlebar-drag {
   -webkit-app-region: drag;
@@ -156,17 +229,20 @@
 }
 
 /* 标题栏与窗口控件语义样式 */
-.titlebar {
-  @apply titlebar-drag flex items-center justify-between select-none border-b border-border/60;
-  height: 2.25rem; /* h-9 */
-}
-@media (min-width: 640px) {
-  .titlebar { height: 2.5rem; /* sm:h-10 */ }
-}
+.titlebar { @apply titlebar-drag flex items-center justify-between select-none border-b border-border/60; height: 2.5rem; }
+@media (min-width: 640px) { .titlebar { height: 2.75rem; } }
+/* 统一由变量控制高度，如需按断点微调，可在平台覆写层中处理 */
 .titlebar-surface {
-  background-color: hsl(var(--color-bg) / 0.7);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background-color: hsl(var(--color-bg) / var(--panel-opacity));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* 能力探测：支持时启用模糊，并使用平台变量控制强度 */
+@supports (backdrop-filter: blur(0px)) or (-webkit-backdrop-filter: blur(0px)) {
+  .toolbar { -webkit-backdrop-filter: blur(var(--fx-blur)); backdrop-filter: blur(var(--fx-blur)); }
+  .titlebar-surface { -webkit-backdrop-filter: blur(var(--fx-blur)); backdrop-filter: blur(var(--fx-blur)); }
+  .surface-glass { -webkit-backdrop-filter: blur(var(--fx-blur)); backdrop-filter: blur(var(--fx-blur)); }
 }
 .window-btn {
   @apply titlebar-no-drag grid place-items-center h-8 w-8 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50;
@@ -174,3 +250,27 @@
 .window-btn--close {
   @apply text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/50;
 }
+
+/* 布局辅助：当页面内包含自绘标题栏时，容器使用该类避免遮挡 */
+
+/* ========== Utilities：容器查询启用类（渐进增强） ========== */
+@layer utilities {
+  .cq { container-type: inline-size; }
+  .cq-name { container-name: layout; }
+}
+
+/* 标题栏平台化：mac 左侧信号灯布局；Windows/Linux 右侧按钮 */
+html[data-platform="mac"] .titlebar { @apply titlebar-drag flex items-center justify-between select-none border-b border-border/60; height: 2.5rem; }
+@media (min-width: 640px) { .titlebar { height: 2.75rem; } }
+html[data-platform="mac"] .titlebar .titlebar-controls {
+  order: -1; /* 将窗口按钮移到最左 */
+  margin-left: var(--space-sm);
+  margin-right: var(--space-sm);
+}
+
+/* 窗口按钮容器使用平台化间距 */
+.window-controls { gap: var(--window-btn-gap); }
+
+
+
+

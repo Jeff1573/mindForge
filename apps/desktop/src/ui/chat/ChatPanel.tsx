@@ -2,6 +2,8 @@ import React from 'react';
 import { ChatSurface } from './ChatSurface';
 import { WindowControls } from '../system/WindowControls';
 import { ThemeToggle } from '../system/ThemeToggle';
+import { Button } from '../../components/ui/button';
+import { Menu } from 'lucide-react';
 import { MessageList, type Message } from './MessageList';
 import { ChatInput } from './ChatInput';
 
@@ -22,8 +24,19 @@ export const ChatPanel: React.FC = () => {
 
   return (
     <ChatSurface>
-      {/* Header：左侧为拖拽区，右侧为窗口控制（禁止拖拽） */}
-      <div className={['w-full shrink-0 rounded-t-xl', 'titlebar titlebar-surface px-2'].join(' ')}>
+      {/* Header：左侧为拖拽区；移动端提供汉堡按钮；右侧为主题与窗口控制（禁止拖拽） */}
+      <div className={['w-full shrink-0', 'titlebar titlebar-surface px-2 flex items-center'].join(' ')}>
+        <div className="titlebar-no-drag md:hidden pr-1">
+          <Button
+            aria-label="打开菜单"
+            size="icon"
+            variant="ghost"
+            className="window-btn"
+            onClick={() => window.dispatchEvent(new Event('mf:toggleSidebar'))}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="titlebar-drag h-full flex-1" />
         <div className="titlebar-no-drag -mr-1 flex items-center gap-1">
           <ThemeToggle />

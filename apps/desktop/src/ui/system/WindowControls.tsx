@@ -80,7 +80,7 @@ export const WindowControls: React.FC = () => {
   };
 
   return (
-    <div className="pointer-events-auto flex items-center gap-1 px-1">
+    <div className="window-controls pointer-events-auto flex items-center px-1">
       {/* 采用语义类 window-btn，仍保留 shadcn Button 的交互与聚焦可达性 */}
       <Button aria-label="最小化" size="icon" variant="ghost" className="window-btn" onClick={onMinimize}>
         <Minus className="h-4 w-4" />
