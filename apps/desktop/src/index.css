@@ -1,6 +1,50 @@
-@import "tailwindcss";
+/* Tailwind v3：典型指令式引入 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* 全局样式占位 */
 html, body, #root { height: 100%; }
-body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
 
+/* 组件与工具样式：用于聊天界面视觉（玻璃拟物 + 气泡） */
+@layer components {
+  /* 页面浅色背景渐变 */
+  .bg-page {
+    @apply bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-200;
+  }
+
+  /* 玻璃拟物容器（包含回退样式） */
+  .surface-glass {
+    @apply rounded-2xl bg-white/70 shadow-xl backdrop-blur-md border border-white/60;
+  }
+
+  .shadow-glass {
+    @apply shadow-[0_10px_30px_-10px_rgba(0,0,0,0.2)];
+  }
+
+  /* 气泡：来消息（灰） */
+  .bubble-in {
+    @apply rounded-2xl bg-neutral-500/80 text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+  }
+  /* 气泡：我方（蓝渐变） */
+  .bubble-out {
+    @apply rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+  }
+  /* 气泡尖角（通过 after 伪元素绘制） */
+  .bubble-tail-in {
+    @apply relative after:absolute after:-left-1.5 after:bottom-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-neutral-500/80;
+  }
+  .bubble-tail-out {
+    @apply relative after:absolute after:-right-1.5 after:bottom-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-blue-600;
+  }
+}
+
+/* Tauri 自定义标题栏拖拽区域控制 */
+.titlebar-drag {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}

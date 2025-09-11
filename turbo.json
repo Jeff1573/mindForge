@@ -9,7 +9,7 @@
       "cache": false
     },
     "dev": {
-      "cache": false
+      "cache": true
     },
     "lint": {
       "cache": false
