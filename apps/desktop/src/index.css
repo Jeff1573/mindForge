@@ -31,15 +31,19 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
   .bubble-out {
     @apply rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
   }
-  /* 气泡尖角（通过 after 伪元素绘制） */
+  /* 气泡尖角（三角形）：使用 border 实现，头像与气泡分离 */
   .bubble-tail-in {
-    @apply relative after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:-left-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-neutral-500/80;
+    /* 左侧（assistant）：用 ::before 右向三角 */
+    @apply relative before:content-[''] before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-2 
+      before:border-t-[6px] before:border-b-[6px] before:border-t-transparent before:border-b-transparent 
+      before:border-r-[6px] before:border-r-neutral-500/80;
   }
   .bubble-tail-out {
-    @apply relative after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:-right-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-gradient-to-r after:from-sky-400 after:to-blue-600;
+    /* 右侧（user）：用 ::after 左向三角，颜色取主体主色 */
+    @apply relative after:content-[''] after:absolute after:top-1/2 after:-translate-y-1/2 after:-right-2 
+      after:border-t-[6px] after:border-b-[6px] after:border-t-transparent after:border-b-transparent 
+      after:border-l-[6px] after:border-l-blue-600;
   }
-  /* 兼容保障：确保伪元素被生成 */
-  .bubble-tail-in::after, .bubble-tail-out::after { content: '' }
 }
 
 /* Tauri 自定义标题栏拖拽区域控制 */

@@ -20,14 +20,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ role, text }) => {
   return (
     <div
       className={cn(
-        'flex w-full items-end gap-2',
-        isUser ? 'justify-end flex-row-reverse' : 'justify-start'
+        'grid w-full items-end gap-3',
+        isUser ? 'grid-cols-[1fr_auto]' : 'grid-cols-[auto_1fr]'
       )}
     >
-      <ChatAvatar role={role} />
-      <div className={cn(isUser ? 'bubble-out bubble-tail-out' : 'bubble-in bubble-tail-in')}>
-        <p className="whitespace-pre-wrap leading-relaxed">{text}</p>
-      </div>
+      {/* assistant: avatar | bubble ； user: bubble | avatar */}
+      {isUser ? (
+        <>
+          <div className={cn('justify-self-end', 'bubble-out bubble-tail-out')}>
+            <p className="whitespace-pre-wrap leading-relaxed">{text}</p>
+          </div>
+          <ChatAvatar role={role} />
+        </>
+      ) : (
+        <>
+          <ChatAvatar role={role} />
+          <div className={cn('justify-self-start', 'bubble-in bubble-tail-in')}>
+            <p className="whitespace-pre-wrap leading-relaxed">{text}</p>
+          </div>
+        </>
+      )}
     </div>
   );
 };
