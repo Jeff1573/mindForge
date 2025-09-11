@@ -33,11 +33,13 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
   }
   /* 气泡尖角（通过 after 伪元素绘制） */
   .bubble-tail-in {
-    @apply relative after:absolute after:-left-1.5 after:bottom-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-neutral-500/80;
+    @apply relative after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:-left-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-neutral-500/80;
   }
   .bubble-tail-out {
-    @apply relative after:absolute after:-right-1.5 after:bottom-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-blue-600;
+    @apply relative after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:-right-2 after:h-3 after:w-3 after:rotate-45 after:rounded-[2px] after:bg-gradient-to-r after:from-sky-400 after:to-blue-600;
   }
+  /* 兼容保障：确保伪元素被生成 */
+  .bubble-tail-in::after, .bubble-tail-out::after { content: '' }
 }
 
 /* Tauri 自定义标题栏拖拽区域控制 */

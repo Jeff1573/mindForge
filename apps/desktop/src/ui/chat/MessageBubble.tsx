@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
+import { ChatAvatar } from './ChatAvatar';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -17,11 +18,16 @@ export interface MessageBubbleProps {
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ role, text }) => {
   const isUser = role === 'user';
   return (
-    <div className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
+    <div
+      className={cn(
+        'flex w-full items-end gap-2',
+        isUser ? 'justify-end flex-row-reverse' : 'justify-start'
+      )}
+    >
+      <ChatAvatar role={role} />
       <div className={cn(isUser ? 'bubble-out bubble-tail-out' : 'bubble-in bubble-tail-in')}>
         <p className="whitespace-pre-wrap leading-relaxed">{text}</p>
       </div>
     </div>
   );
 };
-
