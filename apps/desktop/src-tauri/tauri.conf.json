@@ -5,7 +5,8 @@
   "identifier": "com.mindforge.desktop",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173"
+    "devUrl": "http://localhost:5173",
+    "removeUnusedCommands": true
   },
   "app": {
     "windows": [
@@ -13,6 +14,8 @@
         "title": "MindForge",
         "width": 1200,
         "height": 800,
+        "minWidth": 960,
+        "minHeight": 600,
         "decorations": false,
         "resizable": true
       }
