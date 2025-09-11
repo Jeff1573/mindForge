@@ -1,21 +1,64 @@
-# Node/PNPM
-node_modules/
-.pnpm-store/
-pnpm-lock.yaml
+###############################################
+# Monorepo: Turborepo + pnpm + Vite + Tauri  #
+# 集中管理的根级 .gitignore（子包通用）   #
+###############################################
 
-# Build outputs
-dist/
-build/
-.turbo/
-coverage/
+# =====================
+# Node / pnpm
+# =====================
+**/node_modules/
+**/.pnpm-store/
+# 保留锁文件：pnpm 锁必须入库
+# （移除旧有的忽略 pnpm-lock.yaml 规则）
 
-# OS/IDE
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
+# =====================
+# Build outputs & caches
+# =====================
+**/dist/
+**/build/
+**/.turbo/
+**/.cache/
+**/.vite/
+**/node_modules/.vite/
+**/*.tsbuildinfo
+**/.eslintcache
+**/coverage/
 
+# =====================
+# Tauri / Rust (仅限 src-tauri)
+# =====================
+**/src-tauri/target/
+**/src-tauri/target/release/bundle/
+**/src-tauri/target/debug/
+**/src-tauri/gen/
+# 保留锁文件：不要忽略 Cargo.lock
+
+# =====================
 # Env files
-.env*
+# =====================
+.env
+.env.*
 !.env.example
 
+# =====================
+# OS / IDE
+# =====================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.idea/
+.vscode/
+.vs/
+
+# =====================
+# Logs & temp
+# =====================
+*.log
+logs/
+*.pid
+*.pid.lock
+temp/
+tmp/
+**/.tmp/
+**/.temp/

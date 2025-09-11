@@ -55,3 +55,14 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 ## 版本基线（2025-09-10）
 见 `.workflow/workflow_初始化与基础设施_2025-09-10.md`。
 
+## Git 忽略策略（集中管理）
+- 根级 `.gitignore` 统一覆盖子包（Turborepo）。
+- 关键范围：`**/node_modules/`, `**/dist/`, `**/.turbo/`, `**/.vite/`, `**/.cache/`, `**/*.tsbuildinfo`。
+- Tauri/Rust：仅忽略 `**/src-tauri/target/**` 与打包产物；保留 `Cargo.lock`。
+- 环境变量：忽略 `.env` 与 `.env.*`，保留 `.env.example`。
+- IDE/OS：忽略 `.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db` 等。
+
+若历史已跟踪了被忽略的产物，可执行一次清理（仅从索引移除，不删工作区）：
+```
+git ls-files -z | git check-ignore -z --stdin | tr '\0' '\n' | git rm -r --cached -f --pathspec-from-file - --pathspec-file-nul
+```
