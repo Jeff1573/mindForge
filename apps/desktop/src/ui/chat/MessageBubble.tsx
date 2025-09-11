@@ -20,7 +20,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ role, text }) => {
   return (
     <div
       className={cn(
-        'grid w-full items-end gap-3',
+        'grid w-full items-end gap-3 items-center',
         isUser ? 'grid-cols-[1fr_auto]' : 'grid-cols-[auto_1fr]'
       )}
     >
