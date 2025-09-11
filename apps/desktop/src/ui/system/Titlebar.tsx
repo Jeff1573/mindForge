@@ -8,13 +8,7 @@ import { WindowControls } from './WindowControls';
  */
 export const Titlebar: React.FC = () => {
   return (
-    <div
-      className={
-        'titlebar-drag h-9 flex items-center justify-between select-none '+
-        'border-b border-black/10 dark:border-white/10 '+
-        'bg-white/70 dark:bg-neutral-900/70 backdrop-blur'
-      }
-    >
+    <div className={['titlebar', 'titlebar-surface'].join(' ')}>
       {/* 左侧：可拖拽区域，可放置应用名或占位 */}
       <div className="flex-1 px-3 text-xs text-neutral-600 dark:text-neutral-300 truncate">
         MindForge
@@ -27,4 +21,3 @@ export const Titlebar: React.FC = () => {
     </div>
   );
 };
-

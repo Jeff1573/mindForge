@@ -12,9 +12,9 @@ export const ScrollArea = ({ className, children, ...props }: React.ComponentPro
       orientation="vertical"
       className="flex select-none touch-none p-0.5 transition-colors duration-[160ms] ease-out data-[state=hidden]:opacity-0"
     >
-      <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-neutral-300" />
+      {/* 主题化滚动条：使用语义前景色的透明度 */}
+      <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-foreground/20 hover:bg-foreground/30" />
     </ScrollAreaPrimitive.Scrollbar>
     <ScrollAreaPrimitive.Corner className="bg-transparent" />
   </ScrollAreaPrimitive.Root>
 );
-

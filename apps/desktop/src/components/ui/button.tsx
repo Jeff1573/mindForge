@@ -8,7 +8,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  // ring-offset 使用语义背景，避免深色下出现白色描边
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -16,7 +17,8 @@ const buttonVariants = cva(
         secondary: 'bg-neutral-900 text-white hover:bg-neutral-900/90',
         outline:
           'border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 shadow-sm',
-        ghost: 'hover:bg-neutral-100',
+        // 语义化 ghost：在深浅主题下均为轻度悬浮，不再使用固定的 neutral-100
+        ghost: 'text-foreground/80 hover:text-foreground hover:bg-muted/70',
         link: 'text-blue-600 underline-offset-4 hover:underline'
       },
       size: {

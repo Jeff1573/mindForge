@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatSurface } from './ChatSurface';
 import { WindowControls } from '../system/WindowControls';
+import { ThemeToggle } from '../system/ThemeToggle';
 import { MessageList, type Message } from './MessageList';
 import { ChatInput } from './ChatInput';
 
@@ -22,18 +23,10 @@ export const ChatPanel: React.FC = () => {
   return (
     <ChatSurface>
       {/* Header：左侧为拖拽区，右侧为窗口控制（禁止拖拽） */}
-      <div
-        className={[
-          'w-full',
-          'h-9 sm:h-10 shrink-0 rounded-t-xl',
-          'bg-gradient-to-b from-neutral-100/80 to-neutral-50/60',
-          'dark:from-neutral-900/80 dark:to-neutral-800/60',
-          'backdrop-blur-sm border-b border-black/10 dark:border-white/10',
-          'flex items-center justify-between px-2'
-        ].join(' ')}
-      >
+      <div className={['w-full shrink-0 rounded-t-xl', 'titlebar titlebar-surface px-2'].join(' ')}>
         <div className="titlebar-drag h-full flex-1" />
-        <div className="titlebar-no-drag -mr-1">
+        <div className="titlebar-no-drag -mr-1 flex items-center gap-1">
+          <ThemeToggle />
           <WindowControls />
         </div>
       </div>

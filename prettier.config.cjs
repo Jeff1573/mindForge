@@ -8,6 +8,7 @@ module.exports = {
   tabWidth: 2,
   trailingComma: 'es5',
   bracketSpacing: true,
-  arrowParens: 'always'
+  arrowParens: 'always',
+  // Tailwind 类名排序（与团队风格统一）
+  plugins: [require('prettier-plugin-tailwindcss')]
 };
-

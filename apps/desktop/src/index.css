@@ -3,20 +3,117 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 全局样式占位 */
-html, body, #root { height: 100%; }
-body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+/* ========== 样式基座与设计令牌（Design Tokens） ========== */
+@layer base {
+  /*
+   * 语义化 CSS 变量（HSL 数值，不含 hsl() 包装），以便 Tailwind 在配置中通过
+   * hsl(var(--color-xxx)) 引用。变量命名与 shadcn/ui 语义一致，便于复用。
+   */
+  :root {
+    /* 语义色 - 浅色主题 */
+    --color-bg: 0 0% 100%;
+    --color-fg: 222.2 84% 4.9%;
+
+    --color-muted: 210 40% 96.1%;
+    --color-muted-foreground: 215.4 16.3% 46.9%;
+
+    --color-primary: 221.2 83.2% 53.3%; /* 品牌主色（蓝） */
+    --color-primary-foreground: 210 40% 98%;
+
+    --color-secondary: 210 40% 96.1%;
+    --color-secondary-foreground: 222.2 47.4% 11.2%;
+
+    --color-accent: 210 40% 96.1%;
+    --color-accent-foreground: 222.2 47.4% 11.2%;
+
+    --color-destructive: 0 84.2% 60.2%;
+    --color-destructive-foreground: 210 40% 98%;
+
+    --color-border: 214.3 31.8% 91.4%;
+    --color-input: 214.3 31.8% 91.4%;
+    --color-ring: 221.2 83.2% 53.3%;
+
+    /* 圆角与阴影（可按需扩展） */
+    --radius-sm: 0.375rem; /* 6px */
+    --radius-md: 0.5rem;   /* 8px */
+    --radius-lg: 0.75rem;  /* 12px */
+  }
+
+  /* 深色主题覆盖（由 html[data-theme="dark"] 控制） */
+  html[data-theme="dark"] {
+    --color-bg: 240 10% 3.9%;
+    --color-fg: 210 40% 98%;
+
+    --color-muted: 240 3.7% 15.9%;
+    --color-muted-foreground: 215 20.2% 65.1%;
+
+    --color-primary: 217.2 91.2% 59.8%;
+    --color-primary-foreground: 222.2 47.4% 11.2%;
+
+    --color-secondary: 240 3.7% 15.9%;
+    --color-secondary-foreground: 210 40% 98%;
+
+    --color-accent: 240 3.7% 15.9%;
+    --color-accent-foreground: 210 40% 98%;
+
+    --color-destructive: 0 62.8% 30.6%;
+    --color-destructive-foreground: 0 85.7% 97.3%;
+
+    --color-border: 240 3.7% 15.9%;
+    --color-input: 240 3.7% 15.9%;
+    --color-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* 全局重置与基线 */
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background-color: hsl(var(--color-bg));
+    color: hsl(var(--color-fg));
+  }
+
+  /* 默认边框色与选区/焦点可达性 */
+  * { border-color: hsl(var(--color-border)); }
+  ::selection { background: hsl(var(--color-primary) / 0.18); }
+  :focus-visible { outline: 2px solid hsl(var(--color-ring)); outline-offset: 2px; }
+}
 
 /* 组件与工具样式：用于聊天界面视觉（玻璃拟物 + 气泡） */
 @layer components {
+  /* ========== 语义组件层：通用容器/工具条/按钮/输入等 ========== */
+  .panel {
+    @apply border border-border bg-background/80 text-foreground rounded-lg shadow-sm backdrop-blur;
+  }
+  .card {
+    @apply border border-border bg-background text-foreground rounded-xl shadow-sm;
+  }
+  .toolbar {
+    @apply h-10 sm:h-11 flex items-center gap-2 px-2 border-b border-border/60;
+    background-color: hsl(var(--color-bg) / 0.7);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .btn-ghost {
+    @apply text-foreground/80 hover:text-foreground hover:bg-muted/70;
+  }
+  .input-base {
+    @apply h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
   /* 页面浅色背景渐变 */
   .bg-page {
-    @apply bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-200;
+    /* 使用语义色作为底色基调 */
+    @apply bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-200 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950;
   }
 
   /* 玻璃拟物容器（包含回退样式） */
   .surface-glass {
-    @apply rounded-2xl bg-white/70 shadow-xl backdrop-blur-md border border-white/60;
+    /* 圆角走令牌；浅色与暗色有不同的透明度与边框 */
+    @apply rounded-2xl shadow-xl backdrop-blur-md border;
+    border-radius: var(--radius-lg);
+    background-color: hsl(var(--color-bg) / 0.7);
+    border-color: hsl(var(--color-border) / 0.6);
   }
 
   .shadow-glass {
@@ -25,24 +122,27 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
 
   /* 气泡：来消息（灰） */
   .bubble-in {
-    @apply rounded-2xl bg-neutral-500/80 text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+    @apply rounded-2xl text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+    background-color: hsl(0 0% 45% / 0.8); /* 默认灰气泡，保持现有观感 */
   }
   /* 气泡：我方（蓝渐变） */
   .bubble-out {
-    @apply rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+    @apply rounded-2xl bg-gradient-to-r text-white px-4 py-2 shadow-md max-w-[80%] sm:max-w-[70%] md:max-w-[60%] lg:max-w-[55%] xl:max-w-[50%];
+    /* 渐变基于主色，兼容深浅主题 */
+    background-image: linear-gradient(90deg, hsl(var(--color-primary) / 0.9), hsl(var(--color-primary)));
   }
   /* 气泡尖角（三角形）：使用 border 实现，头像与气泡分离 */
   .bubble-tail-in {
     /* 左侧（assistant）：用 ::before 右向三角 */
     @apply relative before:content-[''] before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-1.5 
       before:border-t-[6px] before:border-b-[6px] before:border-t-transparent before:border-b-transparent 
-      before:border-r-[6px] before:border-r-neutral-500/80;
+      before:border-r-[6px] before:[border-right-color:hsl(0_0%_45%_/_.8)];
   }
   .bubble-tail-out {
     /* 右侧（user）：用 ::after 左向三角，颜色取主体主色 */
     @apply relative after:content-[''] after:absolute after:top-1/2 after:-translate-y-1/2 after:-right-1.5 
       after:border-t-[6px] after:border-b-[6px] after:border-t-transparent after:border-b-transparent 
-      after:border-l-[6px] after:border-l-blue-600;
+      after:border-l-[6px] after:[border-left-color:hsl(var(--color-primary))];
   }
 }
 
@@ -53,4 +153,24 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
 }
 .titlebar-no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* 标题栏与窗口控件语义样式 */
+.titlebar {
+  @apply titlebar-drag flex items-center justify-between select-none border-b border-border/60;
+  height: 2.25rem; /* h-9 */
+}
+@media (min-width: 640px) {
+  .titlebar { height: 2.5rem; /* sm:h-10 */ }
+}
+.titlebar-surface {
+  background-color: hsl(var(--color-bg) / 0.7);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.window-btn {
+  @apply titlebar-no-drag grid place-items-center h-8 w-8 rounded-md text-foreground/80 hover:text-foreground hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50;
+}
+.window-btn--close {
+  @apply text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/50;
 }

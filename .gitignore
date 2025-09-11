@@ -62,3 +62,5 @@ temp/
 tmp/
 **/.tmp/
 **/.temp/
+.workflow/
+.docs/

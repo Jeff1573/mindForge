@@ -19,10 +19,17 @@ export const Sidebar: React.FC = () => {
   const [active, setActive] = React.useState<NavKey>('assistant');
   return (
     <aside
-      className="titlebar-drag shadow-glass sticky top-0 flex h-full w-16 flex-shrink-0 flex-col items-center justify-between self-start rounded-none bg-neutral-900/95 p-0 pb-3 sm:pb-4 text-white sm:w-20"
+      className={
+        [
+          'titlebar-drag sticky top-0 self-start flex flex-col items-center justify-between flex-shrink-0',
+          'w-16 sm:w-20 h-full p-0 pb-3 sm:pb-4 rounded-none',
+          // 主题化：背景/边框/文字基于 Token；右侧分割线
+          'bg-background/95 text-foreground border-r border-border/60'
+        ].join(' ')
+      }
     >
       {/* 顶部 Header：着色且可拖拽 */}
-      <div className="titlebar-drag flex h-10 w-full items-center justify-center border-b border-white/10 bg-neutral-800/80">
+      <div className="titlebar-drag flex h-10 w-full items-center justify-center border-b border-border/60 titlebar-surface">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 overflow-hidden">
           <img src={appIconUrl} alt="MindForge" className="h-5 w-5 object-contain pointer-events-none z-0" />
         </div>
@@ -52,9 +59,11 @@ const SidebarItem: React.FC<{
       size="icon"
       onClick={onClick}
       className={cn(
-        'titlebar-no-drag',
-        'h-12 w-12 rounded-xl border border-white/10 bg-white/10 text-white hover:bg-white/20',
-        active && 'bg-white text-neutral-900 hover:bg-white'
+        'titlebar-no-drag h-12 w-12 rounded-xl',
+        // 默认态：语义化幽灵按钮风格
+        'btn-ghost border border-border/60',
+        // 激活态：主色反转，保证暗浅主题均可读
+        active && 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent'
       )}
       aria-pressed={active}
     >

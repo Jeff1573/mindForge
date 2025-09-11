@@ -7,17 +7,23 @@ module.exports = {
   env: { es2022: true, node: true, browser: true },
   parser: "@typescript-eslint/parser",
   parserOptions: { ecmaVersion: "latest", sourceType: "module" },
-  plugins: ["@typescript-eslint", "react", "react-hooks", "import"],
+  plugins: ["@typescript-eslint", "react", "react-hooks", "import", "tailwindcss"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "plugin:import/recommended",
+    "plugin:tailwindcss/recommended",
     "prettier"
   ],
   settings: {
-    react: { version: "detect" }
+    react: { version: "detect" },
+    // 确保 ESLint 插件能解析到 Tailwind 配置（TS 文件亦可）
+    tailwindcss: {
+      callees: ["cn", "clsx"],
+      config: "apps/desktop/tailwind.config.ts"
+    }
   },
   ignorePatterns: [
     "dist",
@@ -33,4 +39,3 @@ module.exports = {
     "import/no-unresolved": "off"
   }
 };
-

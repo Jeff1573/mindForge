@@ -29,6 +29,8 @@
     "eslint-plugin-react-hooks": "latest",
     "@types/node": "latest",
     "prettier": "latest",
+    "prettier-plugin-tailwindcss": "latest",
+    "eslint-plugin-tailwindcss": "latest",
     "turbo": "latest",
     "typescript": "latest"
   },

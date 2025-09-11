@@ -45,6 +45,20 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 - 构建所有：`pnpm build`
 - 构建 Desktop 安装包：`pnpm --filter @mindforge/desktop build`
 
+## 样式体系约定（Tailwind + shadcn/ui）
+
+- 设计令牌：使用 CSS 变量（HSL 数值）统一配色、圆角与边框：
+  - 浅色在 `:root`，深色在 `html[data-theme="dark"]` 中定义。
+  - 示例变量：`--color-bg/fg/primary/secondary/muted/border/ring`、`--radius-sm/md/lg`。
+- Tailwind 映射：在 `apps/desktop/tailwind.config.ts` 的 `theme.extend.colors` 中以 `hsl(var(--color-xxx))` 暴露为 `background/foreground/primary/...` 等语义色；`borderRadius` 绑定到 `--radius-*`。
+- 主题切换：调用 `setTheme('light'|'dark'|'system')`；应用启动时 `initTheme()` 已启用，依赖 `html[data-theme]` 与 `dark` class。
+- 语义组件层（`@layer components`）：优先使用语义类减少原子类拼接：
+  - 容器类：`.panel`（一般面板）、`.card`（卡片）、`.toolbar`（工具条）。
+  - 表单/按钮：`.input-base`、`.btn-ghost`。
+  - 标题栏/窗口：`.titlebar`、`.titlebar-surface`、`.window-btn`、`.window-btn--close`。
+- 组件变体：统一采用 `cva + cn`（见 `components/ui/button.tsx`）。
+- 工具链：已启用 `prettier-plugin-tailwindcss` 与 `eslint-plugin-tailwindcss`；类名排序与合法性由工具保障。
+
 ## 工作区结构
 - apps/desktop：Tauri v2 + Vite + React + Tailwind + shadcn
 - apps/api：Fastify + TypeScript

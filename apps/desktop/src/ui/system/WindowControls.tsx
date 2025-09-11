@@ -81,19 +81,20 @@ export const WindowControls: React.FC = () => {
 
   return (
     <div className="pointer-events-auto flex items-center gap-1 px-1">
-      <Button aria-label="最小化" size="icon" variant="ghost" className="h-8 w-8" onClick={onMinimize}>
+      {/* 采用语义类 window-btn，仍保留 shadcn Button 的交互与聚焦可达性 */}
+      <Button aria-label="最小化" size="icon" variant="ghost" className="window-btn" onClick={onMinimize}>
         <Minus className="h-4 w-4" />
       </Button>
       <Button
         aria-label={isMax ? '还原' : '最大化'}
         size="icon"
         variant="ghost"
-        className="h-8 w-8"
+        className="window-btn"
         onClick={onToggleMax}
       >
         {isMax ? <Copy className="h-4 w-4" /> : <Square className="h-4 w-4" />}
       </Button>
-      <Button aria-label="关闭" size="icon" variant="ghost" className="h-8 w-8 text-red-600 hover:text-red-700" onClick={onClose}>
+      <Button aria-label="关闭" size="icon" variant="ghost" className="window-btn window-btn--close" onClick={onClose}>
         <X className="h-4 w-4" />
       </Button>
     </div>

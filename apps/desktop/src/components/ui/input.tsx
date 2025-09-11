@@ -10,12 +10,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
-        className={cn(
-          'flex h-10 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm',
-          'placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          className
-        )}
+        // 使用语义基类，统一主题与尺寸/交互风格
+        className={cn('input-base', className)}
         ref={ref}
         {...props}
       />
@@ -23,4 +19,3 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   }
 );
 Input.displayName = 'Input';
-
