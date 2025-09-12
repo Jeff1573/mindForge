@@ -62,7 +62,7 @@ temp/
 tmp/
 **/.tmp/
 **/.temp/
-.workflow/
+# .workflow/
 docs/*
 
 # Rust (all crates)
