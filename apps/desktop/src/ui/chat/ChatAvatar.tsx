@@ -1,6 +1,5 @@
 import React from 'react';
 import { User, Bot } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import type { ChatRole } from './MessageBubble';
 
 export interface ChatAvatarProps {
@@ -16,20 +15,27 @@ export interface ChatAvatarProps {
  */
 export const ChatAvatar: React.FC<ChatAvatarProps> = ({ role, size = 'md', className }) => {
   const isUser = role === 'user';
-  const base = 'shrink-0 rounded-full text-white grid place-items-center';
-  const dim = size === 'sm' ? 'h-7 w-7' : 'h-8 w-8';
   const iconSize = size === 'sm' ? 16 : 18;
+  const dim = size === 'sm' ? 28 : 32; // px
 
-  const bg = isUser
-    ? 'bg-gradient-to-r from-sky-400 to-blue-600'
-    : 'bg-neutral-400/70 dark:bg-neutral-500/80';
+  const style: React.CSSProperties = {
+    flexShrink: 0,
+    borderRadius: 9999,
+    color: '#fff',
+    display: 'grid',
+    placeItems: 'center',
+    height: dim,
+    width: dim,
+    background: isUser
+      ? 'linear-gradient(90deg, hsl(200 90% 60%), hsl(var(--color-primary)))'
+      : 'hsla(0,0%,45%,0.7)'
+  };
 
   return (
-    <div className={cn(base, dim, bg, className)} aria-hidden>
+    <div style={style} className={className} aria-hidden>
       {isUser ? <User size={iconSize} /> : <Bot size={iconSize} />}
     </div>
   );
 };
 
 export default ChatAvatar;
-

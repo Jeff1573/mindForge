@@ -1,6 +1,5 @@
 import React from 'react';
-import { Textarea } from '../../components/ui/textarea';
-import { Button } from '../../components/ui/button';
+import { Button, Input } from 'antd';
 import { SendHorizonal } from 'lucide-react';
 
 export interface ChatInputProps {
@@ -32,17 +31,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 flex items-end gap-2 sm:gap-3">
-      <Textarea
+    <form onSubmit={handleSubmit} className="mf-chat-input">
+      <Input.TextArea
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder="Type your message..."
         disabled={disabled}
-        className="min-h-12 max-h-40 flex-1 resize-y"
+        autoSize={{ minRows: 1, maxRows: 8 }}
+        size="large"
+        className="flex-1"
       />
-      <Button type="submit" disabled={disabled || value.trim().length === 0} className="gap-2">
-        <SendHorizonal className="h-4 w-4" />
+      <Button type="primary" size="large" htmlType="submit" disabled={disabled || value.trim().length === 0} className="gap-2">
+        <SendHorizonal style={{ width: 16, height: 16 }} />
         Send
       </Button>
     </form>

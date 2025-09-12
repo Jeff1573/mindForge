@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sun, Moon, Laptop } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { Button } from 'antd';
 import { type Theme, setTheme } from '../../lib/theme';
 
 /**
@@ -25,15 +25,14 @@ export const ThemeToggle: React.FC = () => {
     setTheme(next);
   }, [mode]);
 
-  const icon = mode === 'light' ? <Sun className="h-4 w-4" /> : mode === 'dark' ? <Moon className="h-4 w-4" /> : <Laptop className="h-4 w-4" />;
+  const icon = mode === 'light' ? <Sun style={{ width: 16, height: 16 }} /> : mode === 'dark' ? <Moon style={{ width: 16, height: 16 }} /> : <Laptop style={{ width: 16, height: 16 }} />;
   const label = mode === 'light' ? '切换到深色' : mode === 'dark' ? '切换到跟随系统' : '切换到浅色';
 
   return (
     <Button
       aria-label={`主题：${mode}；${label}`}
       title={`主题：${mode}（点击切换）`}
-      size="icon"
-      variant="ghost"
+      type="text"
       className="window-btn"
       onClick={cycle}
     >
@@ -41,4 +40,3 @@ export const ThemeToggle: React.FC = () => {
     </Button>
   );
 };
-

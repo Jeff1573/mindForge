@@ -8,7 +8,7 @@ import React from 'react';
  */
 export const ChatSurface: React.FC<React.PropsWithChildren> = ({ children }) => {
   return (
-    <div className="surface-glass shadow-glass relative flex h-full flex-col gap-2">
+    <div className="surface-glass shadow-glass mf-chat-surface">
       {children}
     </div>
   );

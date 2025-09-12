@@ -17,17 +17,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@radix-ui/react-scroll-area": "^1.2.10",
-    "@radix-ui/react-separator": "^1.1.7",
-    "@radix-ui/react-slot": "^1.2.3",
+    "@ant-design/icons": "latest",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-os": "^2",
-    "class-variance-authority": "latest",
+    "antd": "latest",
     "clsx": "latest",
     "lucide-react": "^0.543.0",
     "react": "latest",
-    "react-dom": "latest",
-    "tailwind-merge": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
@@ -37,7 +34,6 @@
     "autoprefixer": "^10.4.21",
     "concurrently": "latest",
     "postcss": "^8.4.45",
-    "tailwindcss": "^3.4.13",
     "typescript": "latest",
     "vite": "latest"
   }

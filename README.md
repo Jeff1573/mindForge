@@ -58,28 +58,20 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
   - `pnpm -C apps/desktop run icon:regen`
   该命令会生成 `.ico/.icns/.png` 的全套图标资源。
 
-## 样式体系约定（Tailwind + shadcn/ui）
+## 样式体系约定（antd + 原生 CSS）
 
-- 设计令牌：使用 CSS 变量（HSL 数值）统一配色、圆角与边框：
+- 设计令牌：仍使用 CSS 变量（HSL 数值）统一配色、圆角与边框：
   - 浅色在 `:root`，深色在 `html[data-theme="dark"]` 中定义。
   - 示例变量：`--color-bg/fg/primary/secondary/muted/border/ring`、`--radius-sm/md/lg`。
-- Tailwind 映射：在 `apps/desktop/tailwind.config.ts` 的 `theme.extend.colors` 中以 `hsl(var(--color-xxx))` 暴露为 `background/foreground/primary/...` 等语义色；`borderRadius` 绑定到 `--radius-*`。
-- 主题切换：调用 `setTheme('light'|'dark'|'system')`；应用启动时 `initTheme()` 已启用，依赖 `html[data-theme]` 与 `dark` class。
-- 语义组件层（`@layer components`）：优先使用语义类减少原子类拼接：
-  - 容器类：`.panel`（一般面板）、`.card`（卡片）、`.toolbar`（工具条）。
-  - 表单/按钮：`.input-base`、`.btn-ghost`。
+- antd 主题：在 `AntdThemeProvider` 中启用 `cssVar: true`，并根据 `html[data-theme]` 切换 `light/dark` 算法；从现有 CSS 变量读取 `colorPrimary/colorBgBase/...` 注入 antd token，保持观感一致。
+- 语义组件层（纯 CSS）：优先使用语义类减少样式分散：
+  - 容器类：`.panel`（一般面板）、`.card`（卡片）、`.toolbar`（工具条）、`.surface-glass`（玻璃容器）。
   - 标题栏/窗口：`.titlebar`、`.titlebar-surface`、`.window-btn`、`.window-btn--close`。
-- 组件变体：统一采用 `cva + cn`（见 `components/ui/button.tsx`）。
-- 工具链：已启用 `prettier-plugin-tailwindcss` 与 `eslint-plugin-tailwindcss`；类名排序与合法性由工具保障。
-
-### 样式与平台适配指南（2025-09-11）
-
-- 平台标识：应用启动时设置 `document.documentElement.dataset.platform = 'windows'|'mac'|'linux'|'mobile'|'web'`，供 CSS 平台覆写使用。
-- 令牌：`apps/desktop/src/index.css` 的 `:root` 定义了颜色、圆角、`--titlebar-height`、`--control-height`、密度与字体等变量；各平台在 `html[data-platform=...]` 中覆写。
-- 布局：含自绘标题栏的页面将根容器加上 `with-titlebar`；移动端容器叠加 `safe-area` 以适配刘海/圆角屏。
-- 模糊与降级：`--fx-blur` 控制强度；在 `@supports (backdrop-filter)` 条件内启用，否则自动降级到无模糊。
-- 容器查询：为组件根容器添加 `cq cq-name`，可用 `@container layout (min-width: ...)` 调整排版；Tailwind 断点仍作为回退。
-- 滚动条：已提供 Firefox/Chromium/WebKit 的近似样式与 `scrollbar-gutter: stable`，减少布局抖动。
+  - 聊天：`.bubble-in/.bubble-out`（气泡）、`.bubble-tail-*`（尖角）、`.mf-*`（布局与响应语义类）。
+- 平台与增强：
+  - 平台标识：`data-platform` 变量（`--fx-blur/--panel-opacity/...`）保留。
+  - 容器查询：启用 `.cq .cq-name` 与 `@container` 调整布局。
+  - 滚动条：提供 Firefox/Chromium/WebKit 的近似样式与 `scrollbar-gutter: stable`。
 
 ### 跨平台验收清单（手动）
 

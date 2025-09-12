@@ -1,6 +1,6 @@
 import React from 'react';
 import { Minus, Square, Copy, X } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { Button } from 'antd';
 
 // Tauri 窗口控制（v2）：使用 @tauri-apps/api/window
 let appWindow: import('@tauri-apps/api/window').Window | null = null;
@@ -81,21 +81,20 @@ export const WindowControls: React.FC = () => {
 
   return (
     <div className="window-controls pointer-events-auto flex items-center px-1">
-      {/* 采用语义类 window-btn，仍保留 shadcn Button 的交互与聚焦可达性 */}
-      <Button aria-label="最小化" size="icon" variant="ghost" className="window-btn" onClick={onMinimize}>
-        <Minus className="h-4 w-4" />
+      {/* 采用语义类 window-btn，配合 antd Button 的 text 类型，保持可达性 */}
+      <Button aria-label="最小化" type="text" className="window-btn" onClick={onMinimize}>
+        <Minus style={{ width: 16, height: 16 }} />
       </Button>
       <Button
         aria-label={isMax ? '还原' : '最大化'}
-        size="icon"
-        variant="ghost"
+        type="text"
         className="window-btn"
         onClick={onToggleMax}
       >
-        {isMax ? <Copy className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+        {isMax ? <Copy style={{ width: 16, height: 16 }} /> : <Square style={{ width: 16, height: 16 }} />}
       </Button>
-      <Button aria-label="关闭" size="icon" variant="ghost" className="window-btn window-btn--close" onClick={onClose}>
-        <X className="h-4 w-4" />
+      <Button aria-label="关闭" type="text" className="window-btn window-btn--close" onClick={onClose}>
+        <X style={{ width: 16, height: 16 }} />
       </Button>
     </div>
   );

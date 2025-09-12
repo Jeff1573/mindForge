@@ -1,5 +1,4 @@
 import React from 'react';
-import { ScrollArea } from '../../components/ui/scroll-area';
 import { MessageBubble, type ChatRole } from './MessageBubble';
 
 export interface Message {
@@ -16,15 +15,16 @@ export const MessageList: React.FC<{ messages: Message[] }> = ({ messages }) => 
   }, [messages.length]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-hidden">
-      <ScrollArea className="h-full pr-2 sm:pr-4">
-        <div className="space-y-3 pl-0 pr-1 py-2 sm:space-y-4 sm:pr-2">
+    <div className="mf-msg-wrap">
+      {/* 原 Radix ScrollArea 替换为原生滚动容器，滚动条样式由全局 CSS 控制 */}
+      <div className="mf-msg-scroll">
+        <div className="mf-msg-list">
           {messages.map((m) => (
             <MessageBubble key={m.id} role={m.role} text={m.text} />
           ))}
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

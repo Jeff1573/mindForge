@@ -1,8 +1,6 @@
-// Tailwind v3.x + Autoprefixer
+// PostCSS（仅保留 Autoprefixer；Tailwind 已移除）
 module.exports = {
   plugins: {
-    tailwindcss: {},
     autoprefixer: {},
   },
 };
-

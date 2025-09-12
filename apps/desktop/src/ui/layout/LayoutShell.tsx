@@ -24,20 +24,20 @@ export const LayoutShell: React.FC<React.PropsWithChildren> = ({ children }) => 
   }, []);
 
   return (
-    <div className="bg-page h-full w-full relative safe-area">
-      <div className="flex h-full w-full overflow-hidden">
+    <div className="bg-page mf-page safe-area">
+      <div className="mf-root-row">
         {/* 桌面端固定侧边栏；移动端隐藏 */}
-        <div className="hidden md:block">
+        <div className="mf-sidebar-desktop">
           <Sidebar />
         </div>
-        <main className="flex-1 min-w-0 cq cq-name">{children}</main>
+        <main className="mf-content cq cq-name">{children}</main>
       </div>
 
       {/* 移动端抽屉式侧边栏 */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-64 max-w-[80vw] shadow-xl">
+        <div className="mf-mobile-overlay">
+          <div className="mf-dim" onClick={() => setMobileOpen(false)} />
+          <div className="mf-drawer">
             <Sidebar />
           </div>
         </div>

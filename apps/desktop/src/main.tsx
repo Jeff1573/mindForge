@@ -1,6 +1,9 @@
 import React from 'react';
+// 全局引入 antd v5 的样式基线重置（不包含组件样式，仅 Reset）
+import 'antd/dist/reset.css';
 import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
+import { AntdThemeProvider } from './ui/system/AntdThemeProvider';
 import { initTheme } from './lib/theme';
 import './index.css';
 import { primePlatformDatasetSync, applyPlatformDataset } from './lib/platform';
@@ -15,6 +18,9 @@ void applyPlatformDataset();
 const root = createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>
-    <App />
+    {/* antd 主题提供（启用 cssVar），内部监听 html[data-theme] 与 dark class */}
+    <AntdThemeProvider>
+      <App />
+    </AntdThemeProvider>
   </React.StrictMode>
 );

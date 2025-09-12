@@ -2,7 +2,7 @@ import React from 'react';
 import { ChatSurface } from './ChatSurface';
 import { WindowControls } from '../system/WindowControls';
 import { ThemeToggle } from '../system/ThemeToggle';
-import { Button } from '../../components/ui/button';
+import { Button } from 'antd';
 import { Menu } from 'lucide-react';
 import { MessageList, type Message } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -25,26 +25,25 @@ export const ChatPanel: React.FC = () => {
   return (
     <ChatSurface>
       {/* Header：左侧为拖拽区；移动端提供汉堡按钮；右侧为主题与窗口控制（禁止拖拽） */}
-      <div className={['w-full shrink-0', 'titlebar titlebar-surface px-2 flex items-center'].join(' ')}>
-        <div className="titlebar-no-drag md:hidden pr-1">
+      <div className="mf-titlebar titlebar titlebar-surface">
+        <div className="titlebar-no-drag mf-show-mobile" style={{ paddingRight: '0.25rem' }}>
           <Button
             aria-label="打开菜单"
-            size="icon"
-            variant="ghost"
+            type="text"
             className="window-btn"
             onClick={() => window.dispatchEvent(new Event('mf:toggleSidebar'))}
           >
-            <Menu className="h-4 w-4" />
+            <Menu style={{ width: 16, height: 16 }} />
           </Button>
         </div>
-        <div className="titlebar-drag h-full flex-1" />
-        <div className="titlebar-no-drag -mr-1 flex items-center gap-1">
+        <div className="mf-titlebar-spacer" />
+        <div className="mf-titlebar-actions">
           <ThemeToggle />
           <WindowControls />
         </div>
       </div>
       {/* 主体区：消息列表 + 输入，加入内边距 */}
-      <div className="flex min-h-0 flex-1 flex-col gap-2 p-4 pr-3 sm:pr-4">
+      <div className="mf-chat-body">
         <MessageList messages={messages} />
         <ChatInput onSend={onSend} />
       </div>

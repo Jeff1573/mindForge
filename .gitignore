@@ -65,18 +65,23 @@ tmp/
 .workflow/
 docs/*
 
-# =====================
-# Tool files
-# =====================
-.codex/
-# Rust crates
-crates/**/target/
-crates/**/*.rs.bk
-# Coverage / profiling (optional)
-crates/**/coverage/
-crates/**/*.profraw
-crates/**/*.profdata
-crates/**/*.gcda
-crates/**/*.gcno
+# Rust (all crates)
+**/target/
+**/*.rs.bk
+**/*.profraw
+**/*.profdata
+**/*.gcda
+**/*.gcno
+
+# Node / build (already present, keep)
+**/node_modules/
+**/dist/
+**/.turbo/
+**/.cache/
+**/.vite/
+**/node_modules/.vite/
+**/*.tsbuildinfo
+**/coverage/
+
 
 scripts/indexer_examples.ps1
