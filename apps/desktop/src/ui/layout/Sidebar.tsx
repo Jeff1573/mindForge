@@ -1,22 +1,25 @@
 import React from 'react';
-import { Brain, MessageSquare, Settings, Power, User } from 'lucide-react';
+import { Brain, MessageSquare, Settings, Power, User, FolderSearch } from 'lucide-react';
 import { Button } from 'antd';
 import { cn } from '../../lib/utils';
+import { useNavigate } from 'react-router-dom';
 // 使用 ESM 方式解析资源，避免相对路径层级错误
 const appIconUrl = new URL('../../../assets/icon.svg', import.meta.url).href;
 
-type NavKey = 'assistant' | 'chats' | 'settings' | 'power' | 'user';
+type NavKey = 'assistant' | 'chats' | 'settings' | 'power' | 'user' | 'indexer';
 
 const items: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'assistant', label: 'AI Assistant', icon: Brain },
   { key: 'chats', label: 'Chats', icon: MessageSquare },
   { key: 'settings', label: 'Settings', icon: Settings },
+  { key: 'indexer', label: 'Indexer', icon: FolderSearch },
   { key: 'power', label: 'Power', icon: Power },
   { key: 'user', label: 'User', icon: User }
 ];
 
 export const Sidebar: React.FC = () => {
   const [active, setActive] = React.useState<NavKey>('assistant');
+  const navigate = useNavigate();
   return (
     <aside className="mf-sidebar">
       {/* 顶部 Header：着色且可拖拽 */}
@@ -26,12 +29,21 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
       <div className="mf-sidebar-main">
-        {items.slice(0, 3).map((it) => (
-          <SidebarItem key={it.key} icon={it.icon} active={active === it.key} onClick={() => setActive(it.key)} />
+        {items.slice(0, 4).map((it) => (
+          <SidebarItem
+            key={it.key}
+            icon={it.icon}
+            active={active === it.key}
+            onClick={() => {
+              setActive(it.key);
+              if (it.key === 'indexer') navigate('/indexer');
+              if (it.key === 'assistant' || it.key === 'chats') navigate('/chat');
+            }}
+          />
         ))}
       </div>
       <div className="mf-sidebar-footer">
-        {items.slice(3).map((it) => (
+        {items.slice(4).map((it) => (
           <SidebarItem key={it.key} icon={it.icon} active={active === it.key} onClick={() => setActive(it.key)} />
         ))}
       </div>

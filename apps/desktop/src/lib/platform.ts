@@ -18,12 +18,11 @@ function detectByUA(): PlatformTag {
   return 'web';
 }
 
-/** 通过 Tauri API（若可用）检测平台 */
-async function detectByTauri(): Promise<PlatformTag | null> {
+/** 通过 Electron 预加载（若可用）或 UA 检测平台 */
+async function detectByBridge(): Promise<PlatformTag | null> {
   try {
-    // Tauri v2: 使用官方插件 @tauri-apps/plugin-os
-    const mod = await import('@tauri-apps/plugin-os');
-    const p = (await (mod.platform?.())) as unknown as string | undefined; // 返回 linux|windows|darwin|android|ios 等
+    // 预加载可选择暴露 `window.api.getPlatform()`，否则回退到 UA
+    const p = (await (window as any)?.api?.getPlatform?.()) as string | undefined;
     if (!p) return null;
     switch (p) {
       case 'windows':
@@ -48,10 +47,10 @@ export async function applyPlatformDataset(): Promise<PlatformTag> {
   const html = typeof document !== 'undefined' ? document.documentElement : null;
   let tag: PlatformTag = 'web';
 
-  // 1) 优先 Tauri
-  const byTauri = await detectByTauri();
-  if (byTauri) {
-    tag = byTauri;
+  // 1) 优先 Electron 预加载桥
+  const byBridge = await detectByBridge();
+  if (byBridge) {
+    tag = byBridge;
   } else {
     // 2) UA 回退
     tag = detectByUA();

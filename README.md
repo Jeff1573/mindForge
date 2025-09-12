@@ -1,6 +1,6 @@
 # MindForge Monorepo
 
-> 桌面端（Tauri v2 + Vite + React + Tailwind + shadcn/ui）与后端（Fastify），含 packages：shared / ui / mcp-server。
+> 桌面端（Electron + Vite + React + Tailwind + shadcn/ui）与后端（Fastify），含 packages：shared / ui / mcp-server。
 
 ## 先决条件
 - Node.js ≥ 20（建议启用 Corepack）
@@ -34,7 +34,7 @@ pnpm dev
 ```
 pnpm --filter @mindforge/api dev
 ```
-- 仅启动 Desktop（Tauri 会同时运行 Vite）：
+- 仅启动 Desktop（Electron + Vite 一体开发）：
 ```
 pnpm --filter @mindforge/desktop dev
 ```
@@ -43,20 +43,11 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 
 ## 构建
 - 构建所有：`pnpm build`
-- 构建 Desktop 安装包：`pnpm --filter @mindforge/desktop build`
+- 构建 Desktop 前端与主进程（后续将补充安装包构建）：`pnpm --filter @mindforge/desktop build`
 
-## Windows 打包图标配置（Tauri）
-- 桌面端包路径：`apps/desktop`
-- 为避免 Windows MSI 打包时报错 `Couldn't find a .ico icon`，在 `apps/desktop/src-tauri/tauri.conf.json` 显式配置：
-  - `bundle.icon`: `[
-    "icons/icon.png",
-    "icons/icon.icns",
-    "icons/icon.ico"
-  ]`
-- 图标资源目录：`apps/desktop/src-tauri/icons/`（仓库已提供完整集）
-- 如需更换/重新生成图标：基于 `apps/desktop/assets/icon.svg` 运行
-  - `pnpm -C apps/desktop run icon:regen`
-  该命令会生成 `.ico/.icns/.png` 的全套图标资源。
+## Windows 打包图标配置（Electron 规划）
+- 图标源：`apps/desktop/assets/icon.svg`。
+- 后续使用 `electron-builder`，图标放置在 `apps/desktop/build/icons/`。
 
 ## 样式体系约定（antd + 原生 CSS）
 
@@ -84,7 +75,7 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 - 安全区：移动端顶部/底部/左右安全区内无内容被遮挡。
 
 ## 工作区结构
-- apps/desktop：Tauri v2 + Vite + React + Tailwind + shadcn
+- apps/desktop：Electron + Vite + React + Tailwind + shadcn
 - apps/api：Fastify + TypeScript
 - packages/shared：环境变量与通用工具
 - packages/ui：UI 组件库（shadcn 风格）
@@ -96,7 +87,7 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 ## Git 忽略策略（集中管理）
 - 根级 `.gitignore` 统一覆盖子包（Turborepo）。
 - 关键范围：`**/node_modules/`, `**/dist/`, `**/.turbo/`, `**/.vite/`, `**/.cache/`, `**/*.tsbuildinfo`。
-- Tauri/Rust：仅忽略 `**/src-tauri/target/**` 与打包产物；保留 `Cargo.lock`。
+- Rust：仅忽略 `**/target/**` 与打包产物；保留 `Cargo.lock`。
 - 环境变量：忽略 `.env` 与 `.env.*`，保留 `.env.example`。
 - IDE/OS：忽略 `.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db` 等。
 

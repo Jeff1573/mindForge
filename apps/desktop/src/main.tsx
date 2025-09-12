@@ -12,7 +12,7 @@ import { primePlatformDatasetSync, applyPlatformDataset } from './lib/platform';
 primePlatformDatasetSync();
 // 初始化主题（浅色/深色/系统）
 initTheme();
-// 异步获取 Tauri 平台并覆写 data-platform（若可用）
+// 异步获取 Electron 预加载提供的平台并覆写 data-platform（若可用）
 void applyPlatformDataset();
 
 const root = createRoot(document.getElementById('root')!);

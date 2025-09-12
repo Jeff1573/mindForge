@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "fastify": "latest",
-    "@mindforge/shared": "workspace:*"
+    "@mindforge/shared": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "latest",
