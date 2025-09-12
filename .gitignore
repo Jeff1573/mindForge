@@ -63,4 +63,20 @@ tmp/
 **/.tmp/
 **/.temp/
 .workflow/
-.docs/
+docs/*
+
+# =====================
+# Tool files
+# =====================
+.codex/
+# Rust crates
+crates/**/target/
+crates/**/*.rs.bk
+# Coverage / profiling (optional)
+crates/**/coverage/
+crates/**/*.profraw
+crates/**/*.profdata
+crates/**/*.gcda
+crates/**/*.gcno
+
+scripts/indexer_examples.ps1
