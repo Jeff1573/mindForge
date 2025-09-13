@@ -23,6 +23,52 @@ pwsh scripts/check-rust.ps1 -InstallIfMissing
 npm install
 ```
 
+## 在不同 workspace 安装依赖（npm）
+
+> 所有命令均在仓库根目录执行。使用 `-w|--workspace <name>` 指定目标工作区。
+
+常用场景：
+
+```bash
+# 安装到 Desktop（生产依赖）
+npm i <pkg> -w @mindforge/desktop
+
+# 安装到 Desktop（开发依赖/仅构建或类型用）
+npm i -D <pkg> -w @mindforge/desktop
+
+# 安装到 API（生产依赖）
+npm i <pkg> -w @mindforge/api
+
+# 同时安装到多个 workspace（可重复 -w）
+npm i <pkg> -w @mindforge/desktop -w @mindforge/api
+
+# 安装类型声明（如果库未内置类型）
+npm i -D @types/<pkg> -w @mindforge/desktop
+
+# 卸载依赖
+npm un <pkg> -w @mindforge/desktop
+
+# 添加 peer / optional 依赖（组件库常用）
+npm i <pkg> --save-peer -w @mindforge/ui
+npm i <pkg> --save-optional -w @mindforge/desktop
+
+# 引用本地包（workspace 协议）
+npm i @mindforge/ui@workspace:* -w @mindforge/desktop
+npm i @mindforge/mcp-server@workspace:* -w @mindforge/api
+```
+
+Electron 原生模块（仅 Desktop）
+
+```bash
+# 安装原生模块后，为当前 Electron 版本重建
+npm i <native-pkg> -w @mindforge/desktop
+npm exec -w @mindforge/desktop electron-rebuild
+```
+
+注意事项：
+- 锁文件位于根目录，由 npm 统一管理；不需要在子包单独运行 `npm install`。
+- Desktop 主进程当前使用 CommonJS；若依赖为 ESM-only，可采用 `await import('<pkg>')` 动态导入。
+
 ## 开发调试
 - 并行启动 API 与 Desktop：
 ```
