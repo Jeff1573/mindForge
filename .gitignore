@@ -89,3 +89,4 @@ scripts/indexer_examples.ps1
 node_modules
 .turbo/
 .workflow/
+dist/
