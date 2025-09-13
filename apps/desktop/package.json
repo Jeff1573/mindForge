@@ -1,17 +1,16 @@
-{
+{  
   "name": "@mindforge/desktop",
   "private": true,
   "version": "0.1.0",
   "description": "MindForge Desktop (Electron + Vite + React)",
-  "type": "module",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "concurrently -n VITE,ELECTRON,ESBUILD -c green,cyan,magenta \"vite\" \"node scripts/start-electron-dev.mjs\" \"node scripts/build-electron.mjs\"",
+    "dev": "concurrently -n TSC,DEV -c magenta,green \"tsc -p tsconfig.electron.json -w\" \"node scripts/dev.cjs\"",
     "check": "vite build --emptyOutDir",
-    "start": "electron ./dist-electron/main.mjs",
-    "web": "vite",
-    "build:web": "vite build",
-    "preview": "vite preview",
-    "build": "vite build",
+    "start": "electron .",
+    "build": "vite build && tsc -p tsconfig.electron.json",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:renderer": "vite build",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -27,10 +26,10 @@
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "latest",
+    "@types/node": "latest",
     "electron": "^31",
     "autoprefixer": "^10.4.21",
     "concurrently": "latest",
-    "esbuild": "latest",
     "postcss": "^8.4.45",
     "typescript": "latest",
     "vite": "latest"

@@ -1,12 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 function getPlatformTag(): 'windows' | 'mac' | 'linux' {
   switch (process.platform) {
@@ -28,14 +25,15 @@ async function createWindow() {
     frame: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      // 中文注释：tsc 编译后预加载脚本输出为 dist/preload.js
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
       spellcheck: false,
     },
   });
-
+  
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
   if (devServerUrl) {
     await mainWindow.loadURL(devServerUrl);
@@ -57,30 +55,28 @@ async function createWindow() {
   });
 }
 
-// IPC：窗口控制与平台查询
-ipcMain.on('window:minimize', () => { try { mainWindow?.minimize(); } catch { /* noop */ } });
-ipcMain.on('window:toggle-maximize', () => {
-  try {
-    if (!mainWindow) return;
-    if (mainWindow.isMaximized()) mainWindow.unmaximize();
-    else mainWindow.maximize();
-  } catch { /* noop */ }
-});
-ipcMain.handle('window:is-maximized', () => {
-  try { return !!mainWindow?.isMaximized(); } catch { return false; }
-});
-ipcMain.on('window:close', () => { try { mainWindow?.close(); } catch { /* noop */ } });
-ipcMain.handle('get-platform', () => getPlatformTag());
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.whenReady().then(async () => {
+  // IPC：窗口控制与平台查询（确保 app 就绪后再注册）
+  ipcMain.on('window:minimize', () => { try { mainWindow?.minimize(); } catch { /* noop */ } });
+  ipcMain.on('window:toggle-maximize', () => {
+    try {
+      if (!mainWindow) return;
+      if (mainWindow.isMaximized()) mainWindow.unmaximize();
+      else mainWindow.maximize();
+    } catch { /* noop */ }
+  });
+  ipcMain.handle('window:is-maximized', () => {
+    try { return !!mainWindow?.isMaximized(); } catch { return false; }
+  });
+  ipcMain.on('window:close', () => { try { mainWindow?.close(); } catch { /* noop */ } });
+  ipcMain.handle('get-platform', () => getPlatformTag());
+
   await createWindow();
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) await createWindow();
   });
 });
-
-
