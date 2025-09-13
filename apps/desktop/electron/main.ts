@@ -1,8 +1,12 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getPlatformTag(): 'windows' | 'mac' | 'linux' {
   switch (process.platform) {
@@ -24,7 +28,7 @@ async function createWindow() {
     frame: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
@@ -37,7 +41,7 @@ async function createWindow() {
     await mainWindow.loadURL(devServerUrl);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    const indexHtml = path.join(__dirname, '../dist/index.html');
+    const indexHtml = path.join(__dirname, 'index.html');
     await mainWindow.loadFile(indexHtml);
   }
 

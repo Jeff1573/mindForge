@@ -1,37 +1,37 @@
 ###############################################
-# Monorepo: Turborepo + pnpm + Vite + Tauri  #
+# Monorepo: Turborepo + npm + Vite + Electron  #
 # 集中管理的根级 .gitignore（子包通用）   #
 ###############################################
 
 # =====================
-# Node / pnpm
+# Node / npm
 # =====================
-**/node_modules/
-**/.pnpm-store/
-# 保留锁文件：pnpm 锁必须入库
-# （移除旧有的忽略 pnpm-lock.yaml 规则）
+
+
+# 保留锁文件：npm 锁必须入库
+
 
 # =====================
 # Build outputs & caches
 # =====================
-**/dist/
+
 **/build/
-**/.turbo/
-**/.cache/
-**/.vite/
-**/node_modules/.vite/
-**/*.tsbuildinfo
+
+
+
+.vite/
+
 **/.eslintcache
-**/coverage/
+
 
 # =====================
-# Tauri / Rust (仅限 src-tauri)
+# Electron / Rust \(仅限 crates\)
 # =====================
-**/src-tauri/target/
-**/src-tauri/target/release/bundle/
-**/src-tauri/target/debug/
-**/src-tauri/gen/
-# 保留锁文件：不要忽略 Cargo.lock
+
+release/bundle/
+debug/
+
+
 
 # =====================
 # Env files
@@ -65,23 +65,27 @@ tmp/
 # .workflow/
 docs/*
 
-# Rust (all crates)
-**/target/
-**/*.rs.bk
-**/*.profraw
-**/*.profdata
-**/*.gcda
-**/*.gcno
+# Rust \(crates\/indexer\)
+crates\/indexer\/target\/
+crates\/indexer\/\*\.rs\.bk
+crates\/indexer\/\*\.profraw
+crates\/indexer\/\*\.profdata
+crates\/indexer\/\*\.gcda
+crates\/indexer\/\*\.gcno
 
-# Node / build (already present, keep)
-**/node_modules/
-**/dist/
-**/.turbo/
-**/.cache/
-**/.vite/
-**/node_modules/.vite/
-**/*.tsbuildinfo
-**/coverage/
+# Node / build \(already present, keep\)
+
+
+
+
+
+.vite/
+
+
 
 
 scripts/indexer_examples.ps1
+.serena/
+node_modules
+.turbo/
+.workflow/

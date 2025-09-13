@@ -43,7 +43,7 @@ export default function IndexerPage() {
   const [extraIgnore, setExtraIgnore] = useState<string>('');
   const listeningRef = useRef(false);
 
-  // 中文注释：Tauri API 已移除。待后续以 Electron 子进程与 IPC 替代。
+  // 中文注释：索引器功能迁移中。待后续以 Electron 子进程与 IPC 替代。
   useEffect(() => {
     listeningRef.current = true;
     return () => {
@@ -73,7 +73,7 @@ export default function IndexerPage() {
     <div style={{ padding: 16 }}>
       <Typography.Title level={4}>项目解析</Typography.Title>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Alert type="info" message="索引器功能迁移中：Tauri API 已移除，将在 Electron 子进程中提供等价能力。" showIcon />
+        <Alert type="info" message="索引器功能迁移中：将在 Electron 子进程中提供等价能力。" showIcon />
         {error && <Alert type="error" message={error.message} showIcon />}
         <Space>
           <Button onClick={onPick} disabled>

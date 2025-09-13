@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "smoke": "turbo run smoke --filter=@mindforge/api && pnpm --filter @mindforge/desktop check",
+    "smoke": "turbo run smoke --filter=@mindforge/api && turbo run check --filter=@mindforge/desktop",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "format": "prettier --write ."
@@ -14,12 +14,13 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "npm@10.15.1",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "latest",
     "@typescript-eslint/parser": "latest",
@@ -28,17 +29,9 @@
     "eslint-plugin-import": "latest",
     "eslint-plugin-react": "latest",
     "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-tailwindcss": "^3.18.2",
     "prettier": "latest",
     "turbo": "latest",
     "typescript": "latest"
-  },
-  "pnpm": {
-    "allowedBuiltDependencies": [
-      "esbuild"
-    ],
-    "ignoredBuiltDependencies": [
-      "electron",
-      "esbuild"
-    ]
   }
 }

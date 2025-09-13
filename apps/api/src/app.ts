@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { getEnv, getPublicEnv } from '@mindforge/shared';
+import { getPublicEnv } from '@mindforge/shared';
 
 export function buildApp() {
   const app = Fastify({ logger: false });

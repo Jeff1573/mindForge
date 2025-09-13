@@ -358,7 +358,7 @@ html[data-platform="mobile"] .safe-area {
   }
 }
 
-/* Tauri 自定义标题栏拖拽区域控制 */
+/* 自定义标题栏拖拽区域控制（Electron/Chromium） */
 .titlebar-drag {
   -webkit-app-region: drag;
   user-select: none;

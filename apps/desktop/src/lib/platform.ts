@@ -1,6 +1,6 @@
 /**
  * 平台检测与标识注入（桌面三端 + 移动端）
- * - 优先使用 Tauri API: `@tauri-apps/plugin-os`
+ * * - 优先使用 Electron API: `window.api.getPlatform`
  * - 回退到 UserAgent 检测（用于浏览器预览或缺少模块时）
  * - 结果写入 <html data-platform="windows|mac|linux|mobile|web">。
  */
@@ -62,7 +62,7 @@ export async function applyPlatformDataset(): Promise<PlatformTag> {
   return tag;
 }
 
-/** 便捷同步版本（尽早设置 UA 回退，随后用 Tauri 覆写） */
+/** 便捷同步版本（尽早设置 UA 回退，随后用 Electron 覆写） */
 export function primePlatformDatasetSync() {
   try {
     const html = document.documentElement;

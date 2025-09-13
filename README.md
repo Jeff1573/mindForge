@@ -4,7 +4,7 @@
 
 ## 先决条件
 - Node.js ≥ 20（建议启用 Corepack）
-- pnpm（建议：`corepack enable && corepack prepare pnpm@10 --activate`）
+- npm（Node.js 内置）
 - Rust 工具链（Windows 需 MSVC）
 
 可执行脚本检测/安装 Rust：
@@ -20,30 +20,28 @@ pwsh scripts/check-rust.ps1 -InstallIfMissing
 
 ## 安装依赖
 ```
-corepack enable
-corepack prepare pnpm@10 --activate
-pnpm install
+npm install
 ```
 
 ## 开发调试
 - 并行启动 API 与 Desktop：
 ```
-pnpm dev
+npm run dev
 ```
 - 仅启动 API：
 ```
-pnpm --filter @mindforge/api dev
+npm run dev --workspace=@mindforge/api
 ```
 - 仅启动 Desktop（Electron + Vite 一体开发）：
 ```
-pnpm --filter @mindforge/desktop dev
+npm run dev --workspace=@mindforge/desktop
 ```
 
 API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境：`/env`。
 
 ## 构建
-- 构建所有：`pnpm build`
-- 构建 Desktop 前端与主进程（后续将补充安装包构建）：`pnpm --filter @mindforge/desktop build`
+- 构建所有：`npm run build`
+- 构建 Desktop 前端与主进程（后续将补充安装包构建）：`npm run build --workspace=@mindforge/desktop`
 
 ## Windows 打包图标配置（Electron 规划）
 - 图标源：`apps/desktop/assets/icon.svg`。
