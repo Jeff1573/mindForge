@@ -16,6 +16,14 @@ const api = {
   },
   getPlatform: async () => ipcRenderer.invoke('get-platform') as Promise<'windows' | 'mac' | 'linux'>,
 
+  // ========== 文件系统：目录选择 ==========
+  // 说明：返回用户选择的目录绝对路径，若取消选择则为 null
+  selectDirectory: async () =>
+    ipcRenderer.invoke('fs:chooseDirectory') as Promise<string | null>,
+  // 在资源管理器/访达中展示某个文件或目录
+  revealInFolder: async (fullPath: string) =>
+    ipcRenderer.invoke('fs:revealInFolder', fullPath) as Promise<boolean>,
+
   // ========== MCP（主进程桥） ==========
   mcp: {
     // 会话创建：从配置批量创建，不连接

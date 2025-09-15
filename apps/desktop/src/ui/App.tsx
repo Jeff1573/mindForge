@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 // antd 组件与图标（替换 Tailwind 呈现层）
 import {
@@ -41,20 +41,31 @@ export default function App() {
   const canUseWebkitDir = useMemo(() => typeof document !== "undefined", []);
   const { token } = theme.useToken();
 
+  // 首屏：从 localStorage 恢复上次选择
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('mf.selectedDirectoryPath');
+      if (cached) setProjectPath(cached);
+    } catch { /* noop */ }
+  }, []);
+
   const handleChooseDir = async () => {
-    // TODO： 优先：Electron IPC 方式
+    // 优先：Electron IPC 方式；若存在该 API，无论选择或取消，都不触发浏览器回退
     try {
       if (window?.api?.selectDirectory) {
-        const result = await window.api.selectDirectory(); // 应返回字符串路径
+        const result = await window.api.selectDirectory(); // 应返回字符串路径或 null（取消）
         if (typeof result === "string" && result.length) {
           setProjectPath(result);
-          return;
+          try { localStorage.setItem('mf.selectedDirectoryPath', result); } catch { /* noop */ }
         }
+        return; // 关键：存在 IPC 时直接返回，避免取消后弹出第二次选择
       }
     } catch (e) {
       console.warn(e);
+      // 出错时也返回，避免二次弹窗造成困扰
+      return;
     }
-    // 回退：浏览器预览（不返回真实路径，仅展示所选目录名）
+    // 仅当不存在 IPC API（例如浏览器预览环境）时，使用回退方案
     fileInputRef.current?.click();
   };
 
@@ -65,7 +76,14 @@ export default function App() {
     const first = files[0];
     const webkitRelativePath = first?.webkitRelativePath || first?.name;
     const topLevel = webkitRelativePath?.split("/")?.[0] || first?.name || "已选择目录";
-    setProjectPath(`(预览) ${topLevel}`);
+    const value = `(预览) ${topLevel}`;
+    setProjectPath(value);
+    try { localStorage.setItem('mf.selectedDirectoryPath', value); } catch { /* noop */ }
+  };
+
+  const handleClear = () => {
+    setProjectPath("");
+    try { localStorage.removeItem('mf.selectedDirectoryPath'); } catch { /* noop */ }
   };
 
   const handleGenerate = async () => {
@@ -103,7 +121,7 @@ export default function App() {
     try {
       await navigator.clipboard.writeText(reportPath);
       setLog((prev) => [...prev, "报告路径已复制到剪贴板"]);
-    } catch {}
+    } catch { /* noop */ }
   };
 
   return (
@@ -157,17 +175,17 @@ export default function App() {
               {/* 网格布局：输入框 + 按钮 */}
               {/* 选择目录区：优先走 Electron IPC（window.api.selectDirectory），
                   若不可用则触发隐藏的 <input type="file" webkitdirectory> 回退。 */}
-              <div
+                <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr auto',
+                  gridTemplateColumns: projectPath ? '1fr auto auto' : '1fr auto',
                   gap: 12,
                 }}
               >
                 <Input
                   readOnly
                   value={projectPath}
-                  placeholder="尚未选择"
+                  placeholder="未选择目录"
                   size="middle"
                 />
                 <Button
@@ -175,8 +193,11 @@ export default function App() {
                   icon={<FolderOpenOutlined />}
                   onClick={handleChooseDir}
                 >
-                  选择目录
+                  {projectPath ? '更改目录' : '选择目录'}
                 </Button>
+                {projectPath && (
+                  <Button onClick={handleClear}>清除</Button>
+                )}
               </div>
 
               {/* 浏览器预览隐藏输入（回退方案，仅演示环境用于获取目录名）： */}
@@ -185,10 +206,8 @@ export default function App() {
                   ref={fileInputRef}
                   style={{ display: 'none' }}
                   type="file"
-                  // @ts-ignore
+                  // @ts-expect-error Chromium 非标准属性，用于目录选择回退
                   webkitdirectory="true"
-                  // @ts-ignore
-                  directory="true"
                   onChange={handleFakeDirPick}
                 />
               )}
@@ -273,9 +292,7 @@ export default function App() {
                         size="small"
                         icon={<ExportOutlined />}
                         onClick={() => {
-                          // @ts-ignore
                           if (window?.api?.revealInFolder && reportPath) {
-                            // @ts-ignore
                             window.api.revealInFolder(reportPath);
                           }
                         }}
@@ -292,7 +309,7 @@ export default function App() {
 
         {/* 小贴士 */}
         <Typography.Paragraph className="security-footer-tip" type="secondary">
-          提示：将选择目录与生成报告逻辑接入 Electron IPC 后即可投入使用。建议在主进程实现安全沙箱与最小权限访问。
+          {/* 提示：将选择目录与生成报告逻辑接入 */}
         </Typography.Paragraph>
       </div>
     </div>

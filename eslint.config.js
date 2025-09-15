@@ -87,6 +87,12 @@ module.exports = [
     },
   },
   {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
+  {
     ignores: [
       '**/dist/**',
       '**/build/**',

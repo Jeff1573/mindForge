@@ -3,17 +3,17 @@ import { Minus, Square, Copy, X } from 'lucide-react';
 import { Button } from 'antd';
 
 // 中文注释：通过 Electron 预加载脚本暴露的 window.api 进行窗口控制
-type WindowApi = {
-  minimize: () => Promise<void> | void;
-  toggleMaximize: () => Promise<void> | void;
-  isMaximized: () => Promise<boolean> | boolean;
-  close: () => Promise<void> | void;
-  onResized?: (cb: () => void) => () => void;
-};
+// type WindowApi = {
+//   minimize: () => Promise<void> | void;
+//   toggleMaximize: () => Promise<void> | void;
+//   isMaximized: () => Promise<boolean> | boolean;
+//   close: () => Promise<void> | void;
+//   onResized?: (cb: () => void) => () => void;
+// };
 
-declare global {
-  interface Window { api?: WindowApi }
-}
+// declare global {
+//   interface Window { api?: WindowApi }
+// }
 
 export const WindowControls: React.FC = () => {
   const [isMax, setIsMax] = React.useState(false);

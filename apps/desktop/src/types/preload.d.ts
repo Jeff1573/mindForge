@@ -1,10 +1,10 @@
-// 全局类型：将 Electron 预加载暴露的 API 合并到 window 上
-// 仅类型导入，不会引入运行时代码
-type _PreloadApi = import('../../electron/preload').PreloadApi;
+// 全局类型声明：为渲染器提供 window.api 的类型提示
+// 注意：仅类型导入，不会参与打包
+type PreloadApi = import('../../electron/preload').PreloadApi;
 
 declare global {
   interface Window {
-    api: _PreloadApi;
+    api: PreloadApi;
   }
 }
 

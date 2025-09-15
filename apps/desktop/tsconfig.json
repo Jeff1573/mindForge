@@ -5,5 +5,5 @@
     "types": ["vite/client", "react", "react-dom", "node"],
     "sourceMap": true
   },
-  "include": ["src", "vite.config.ts", "electron"]
+  "include": ["src", "vite.config.ts", "electron", "types/**/*.d.ts"]
 }

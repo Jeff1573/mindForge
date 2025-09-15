@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'node:path';
 // MCP：主进程最小客户端接口
 import { McpSessionManager } from './mcp/sessionManager';
@@ -82,6 +82,32 @@ app.whenReady().then(async () => {
   });
   ipcMain.on('window:close', () => { try { mainWindow?.close(); } catch { /* noop */ } });
   ipcMain.handle('get-platform', () => getPlatformTag());
+
+  // ========== 文件系统：选择目录（最小实现） ==========
+  // 返回用户选择的第一个目录的绝对路径；取消则返回 null
+  ipcMain.handle('fs:chooseDirectory', async () => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow!, {
+        properties: ['openDirectory'],
+      });
+      if (result.canceled || !result.filePaths?.length) return null;
+      return result.filePaths[0] ?? null;
+    } catch (err) {
+      console.error('[fs:chooseDirectory] 失败:', err);
+      return null;
+    }
+  });
+
+  // 在系统文件管理器中显示并选中路径
+  ipcMain.handle('fs:revealInFolder', async (_e, fullPath: string) => {
+    try {
+      await shell.showItemInFolder(fullPath);
+      return true;
+    } catch (err) {
+      console.error('[fs:revealInFolder] 失败:', err);
+      return false;
+    }
+  });
 
   // ========== MCP 最小 IPC 接口 ==========
   // 说明：本期仅提供编程接口，不做 UI 配置对接
