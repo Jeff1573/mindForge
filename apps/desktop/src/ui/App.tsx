@@ -1,26 +1,301 @@
-import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { LayoutShell } from './layout/LayoutShell';
-import { ChatPanel } from './chat/ChatPanel';
-// 占位：Indexer 页面稍后添加到 ui/indexer/IndexerPage
-const IndexerPage = React.lazy(() => import('./indexer/IndexerPage').catch(() => ({ default: () => null })));
+import React, { useMemo, useRef, useState } from 'react';
+import './App.css';
+// antd 组件与图标（替换 Tailwind 呈现层）
+import {
+  Typography,
+  Card,
+  Space,
+  Input,
+  Button,
+  Divider,
+  Progress,
+  List,
+  theme,
+  ConfigProvider,
+} from 'antd';
+import {
+  FolderOpenOutlined,
+  FileDoneOutlined,
+  PlayCircleFilled,
+  CheckCircleFilled,
+  LoadingOutlined,
+  CopyOutlined,
+  ExportOutlined,
+} from '@ant-design/icons';
+import Header from './layout/Header';
 
-/**
- * App: 默认渲染聊天界面布局
- * - 左侧 Sidebar，右侧 ChatSurface（消息 + 输入）
- */
-export function App() {
+// 注：此组件仅展示 UI。与 Electron 主进程的实际交互（选择目录、生成报告）
+// 需要你在 renderer 里通过 IPC 暴露方法，例如：window.api.selectDirectory() / window.api.generateReport(path)
+// 下面提供了浏览器回退方案（webkitdirectory）以便在预览中演示。
+
+export default function App() {
+  // 基础状态：与原实现一致，仅替换 UI 呈现
+  const [projectPath, setProjectPath] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [reportPath, setReportPath] = useState<string>("");
+  const [log, setLog] = useState<string[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canUseWebkitDir = useMemo(() => typeof document !== "undefined", []);
+  const { token } = theme.useToken();
+
+  const handleChooseDir = async () => {
+    // TODO： 优先：Electron IPC 方式
+    try {
+      if (window?.api?.selectDirectory) {
+        const result = await window.api.selectDirectory(); // 应返回字符串路径
+        if (typeof result === "string" && result.length) {
+          setProjectPath(result);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    // 回退：浏览器预览（不返回真实路径，仅展示所选目录名）
+    fileInputRef.current?.click();
+  };
+
+  const handleFakeDirPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    // 取第一个文件/目录的相对路径的最顶层目录名称作为展示
+    const first = files[0];
+    const webkitRelativePath = first?.webkitRelativePath || first?.name;
+    const topLevel = webkitRelativePath?.split("/")?.[0] || first?.name || "已选择目录";
+    setProjectPath(`(预览) ${topLevel}`);
+  };
+
+  const handleGenerate = async () => {
+    if (!projectPath || isGenerating) return;
+    setIsGenerating(true);
+    setReportPath("");
+    setProgress(0);
+    setLog(["开始生成报告…"]);
+
+    // 如果你有真实后端逻辑，可以替换为 IPC 调用：
+    // const out = await window.api.generateReport(projectPath)
+    // setReportPath(out.path)
+
+    // 预览里做个假进度
+    const steps = [
+      "解析项目结构",
+      "索引与检索代码",
+      "分析潜在风险点",
+      "汇总并生成报告",
+    ];
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise((r) => setTimeout(r, 600));
+      setProgress(Math.round(((i + 1) / steps.length) * 100));
+      setLog((prev) => [...prev, steps[i]]);
+    }
+
+    const fakePath = `${projectPath}/reports/security-report-${Date.now()}.md`;
+    setReportPath(fakePath);
+    setIsGenerating(false);
+    setLog((prev) => [...prev, "完成！"]);
+  };
+
+  const handleCopy = async () => {
+    if (!reportPath) return;
+    try {
+      await navigator.clipboard.writeText(reportPath);
+      setLog((prev) => [...prev, "报告路径已复制到剪贴板"]);
+    } catch {}
+  };
+
   return (
-    <HashRouter>
-      <LayoutShell>
-        <React.Suspense fallback={null}>
-          <Routes>
-            <Route path="/chat" element={<ChatPanel />} />
-            <Route path="/indexer" element={<IndexerPage />} />
-            <Route path="*" element={<Navigate to="/chat" replace />} />
-          </Routes>
-        </React.Suspense>
-      </LayoutShell>
-    </HashRouter>
+    <ConfigProvider
+      theme={{
+        token: {
+          // 局部页面采用清新的绿色主色，贴合设计图
+          colorPrimary: 'hsl(160 84% 39%)',
+        },
+      }}
+    >
+    <div className="security-app">
+      <Header />
+      {/* 顶部标题区：图标 + 文案 */}
+      <div className="security-wrap">
+        <Space size="middle" align="center">
+          <div
+            aria-hidden
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: 'rgba(16,185,129,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FileDoneOutlined style={{ fontSize: 20, color: '#059669' }} />
+          </div>
+          <div>
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              项目安全报告生成器
+            </Typography.Title>
+            <Typography.Text type="secondary">选择一个项目目录，一键生成扫描报告。简洁 · 清新</Typography.Text>
+          </div>
+        </Space>
+      </div>
+
+      {/* 主内容卡片 */}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px 64px' }}>
+        <Card bodyStyle={{ padding: 24 }} className="security-card">
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            {/* 选择目录 */}
+            <div>
+              <Space size="small" align="center" style={{ marginBottom: 8 }}>
+                <FolderOpenOutlined style={{ color: '#059669' }} />
+                <Typography.Text strong>选择项目目录</Typography.Text>
+              </Space>
+
+              {/* 网格布局：输入框 + 按钮 */}
+              {/* 选择目录区：优先走 Electron IPC（window.api.selectDirectory），
+                  若不可用则触发隐藏的 <input type="file" webkitdirectory> 回退。 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: 12,
+                }}
+              >
+                <Input
+                  readOnly
+                  value={projectPath}
+                  placeholder="尚未选择"
+                  size="middle"
+                />
+                <Button
+                  type="primary"
+                  icon={<FolderOpenOutlined />}
+                  onClick={handleChooseDir}
+                >
+                  选择目录
+                </Button>
+              </div>
+
+              {/* 浏览器预览隐藏输入（回退方案，仅演示环境用于获取目录名）： */}
+              {canUseWebkitDir && (
+                <input
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  type="file"
+                  // @ts-ignore
+                  webkitdirectory="true"
+                  // @ts-ignore
+                  directory="true"
+                  onChange={handleFakeDirPick}
+                />
+              )}
+            </div>
+
+            <Divider style={{ margin: '8px 0 0' }} />
+
+            {/* 生成报告区：保持原有假进度逻辑，仅替换为 antd 组件 */}
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography.Text type="secondary">输出格式：Markdown（.md）</Typography.Text>
+                <Button
+                  type="primary"
+                  icon={isGenerating ? <LoadingOutlined /> : <PlayCircleFilled />}
+                  loading={isGenerating}
+                  onClick={handleGenerate}
+                  disabled={!projectPath}
+                >
+                  {isGenerating ? '正在生成…' : '开始生成报告'}
+                </Button>
+              </div>
+
+              {/* 进度条区块：展示当前 percent，关键信息在 progress 状态 */}
+              <div
+                style={{
+                  border: `1px solid ${token.colorBorder}`,
+                  borderRadius: token.borderRadiusLG,
+                  padding: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: token.colorTextTertiary, marginBottom: 6 }}>
+                  <span>进度</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress percent={progress} showInfo={false} />
+              </div>
+
+              {/* 日志区块：限制高度可滚动 */}
+              <div
+                style={{
+                  border: `1px solid ${token.colorBorder}`,
+                  borderRadius: token.borderRadiusLG,
+                  padding: 12,
+                }}
+              >
+                <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>过程日志</div>
+                <div style={{ maxHeight: 120, overflow: 'auto' }}>
+                  <List
+                    size="small"
+                    dataSource={log}
+                    renderItem={(item) => <List.Item style={{ padding: '4px 0' }}>• {item}</List.Item>}
+                  />
+                </div>
+              </div>
+
+              {/* 结果卡片：成功提示 + 操作（复制 / 打开文件夹） */}
+              {reportPath && (
+                <div
+                  style={{
+                    border: `1px solid ${token.colorSuccessBorder}`,
+                    background: token.colorSuccessBg,
+                    borderRadius: token.borderRadiusLG,
+                    padding: 16,
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <CheckCircleFilled style={{ color: token.colorSuccess, fontSize: 18, marginTop: 2 }} />
+                  <div style={{ flex: 1 }}>
+                    <Typography.Text strong style={{ color: token.colorSuccess }}>
+                      报告已生成
+                    </Typography.Text>
+                    <div style={{ marginTop: 6, fontSize: 12, wordBreak: 'break-all', color: token.colorText }}>
+                      {reportPath}
+                    </div>
+                    <Space size="small" style={{ marginTop: 12 }}>
+                      <Button size="small" icon={<CopyOutlined />} onClick={handleCopy}>
+                        复制路径
+                      </Button>
+                      <Button
+                        size="small"
+                        icon={<ExportOutlined />}
+                        onClick={() => {
+                          // @ts-ignore
+                          if (window?.api?.revealInFolder && reportPath) {
+                            // @ts-ignore
+                            window.api.revealInFolder(reportPath);
+                          }
+                        }}
+                      >
+                        打开所在文件夹
+                      </Button>
+                    </Space>
+                  </div>
+                </div>
+              )}
+            </Space>
+          </Space>
+        </Card>
+
+        {/* 小贴士 */}
+        <Typography.Paragraph className="security-footer-tip" type="secondary">
+          提示：将选择目录与生成报告逻辑接入 Electron IPC 后即可投入使用。建议在主进程实现安全沙箱与最小权限访问。
+        </Typography.Paragraph>
+      </div>
+    </div>
+    </ConfigProvider>
   );
 }

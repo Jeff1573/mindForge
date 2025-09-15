@@ -118,11 +118,13 @@ export class McpSessionManager extends EventEmitter {
     const cfg = loadMcpConfig(configPath);
     const handles: SessionHandle[] = [];
     for (const c of cfg.clients) {
-      const h = this.create({
-        id: c.id,
-        client: c.client,
-        transport: c.transport,
-      });
+      const existing = this.sessions.get(c.id);
+      if (existing) {
+        // 已存在：直接返回已有句柄，避免抛错（便于 HMR/页面重载）
+        handles.push(existing);
+        continue;
+      }
+      const h = this.create({ id: c.id, client: c.client, transport: c.transport });
       handles.push(h);
     }
     return handles;

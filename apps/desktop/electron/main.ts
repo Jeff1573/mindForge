@@ -65,6 +65,8 @@ app.on('window-all-closed', () => {
 app.whenReady().then(async () => {
   // MCP：会话管理器（最小实现，不连接 UI 配置）
   const mcp = new McpSessionManager();
+  // 防重复：记录已向渲染器转发事件的会话 id，避免多次绑定导致重复消息
+  const forwardedSessionIds = new Set<string>();
 
   // IPC：窗口控制与平台查询（确保 app 就绪后再注册）
   ipcMain.on('window:minimize', () => { try { mainWindow?.minimize(); } catch { /* noop */ } });
@@ -87,21 +89,24 @@ app.whenReady().then(async () => {
     // 中文注释：仅创建，不自动连接/初始化
     const handle = mcp.create(spec);
     // 事件转发：最小实现将关键信号透传给当前主窗口
-    handle.client.on('tools:listChanged', () => {
-      try { mainWindow?.webContents.send('mcp:tools:listChanged', { id: handle.id }); } catch { /* noop */ }
-    });
-    handle.client.on('notification', (n) => {
-      try { mainWindow?.webContents.send('mcp:stream:data', { id: handle.id, notification: n }); } catch { /* noop */ }
-    });
-    handle.client.on('log', (level, message, meta) => {
-      try { mainWindow?.webContents.send('mcp:log', { id: handle.id, level, message, meta }); } catch { /* noop */ }
-    });
-    handle.client.on('error', (err) => {
-      try { mainWindow?.webContents.send('mcp:error', { id: handle.id, message: String(err) }); } catch { /* noop */ }
-    });
-    handle.client.on('close', (code?: number, reason?: string) => {
-      try { mainWindow?.webContents.send('mcp:close', { id: handle.id, code, reason }); } catch { /* noop */ }
-    });
+    if (!forwardedSessionIds.has(handle.id)) {
+      handle.client.on('tools:listChanged', () => {
+        try { mainWindow?.webContents.send('mcp:tools:listChanged', { id: handle.id }); } catch { /* noop */ }
+      });
+      handle.client.on('notification', (n) => {
+        try { mainWindow?.webContents.send('mcp:stream:data', { id: handle.id, notification: n }); } catch { /* noop */ }
+      });
+      handle.client.on('log', (level, message, meta) => {
+        try { mainWindow?.webContents.send('mcp:log', { id: handle.id, level, message, meta }); } catch { /* noop */ }
+      });
+      handle.client.on('error', (err) => {
+        try { mainWindow?.webContents.send('mcp:error', { id: handle.id, message: String(err) }); } catch { /* noop */ }
+      });
+      handle.client.on('close', (code?: number, reason?: string) => {
+        try { mainWindow?.webContents.send('mcp:close', { id: handle.id, code, reason }); } catch { /* noop */ }
+      });
+      forwardedSessionIds.add(handle.id);
+    }
     return { id: handle.id };
   });
 
@@ -110,6 +115,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('mcp/createFromConfig', (_e, configPath?: string) => {
     const handles = mcp.createFromConfig(configPath);
     for (const handle of handles) {
+      if (forwardedSessionIds.has(handle.id)) continue;
       // 事件转发与单个创建一致
       handle.client.on('tools:listChanged', () => {
         try { mainWindow?.webContents.send('mcp:tools:listChanged', { id: handle.id }); } catch { /* noop */ }
@@ -126,6 +132,7 @@ app.whenReady().then(async () => {
       handle.client.on('close', (code?: number, reason?: string) => {
         try { mainWindow?.webContents.send('mcp:close', { id: handle.id, code, reason }); } catch { /* noop */ }
       });
+      forwardedSessionIds.add(handle.id);
     }
     return { ids: handles.map(h => h.id) };
   });

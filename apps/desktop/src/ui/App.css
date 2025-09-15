@@ -1,0 +1,33 @@
+/* App 页面专用样式（不使用 tailwind） */
+
+.security-app {
+  min-height: 100vh;
+  /* 顶部浅绿渐变到白色，贴近设计图 */
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(255, 255, 255, 1) 55%);
+  background: radial-gradient(110% 65% at 16% 0%, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 38%, rgba(255, 255, 255, 1) 70%);
+}
+
+.security-app-bg {
+  /* 顶部浅绿渐变到白色，贴近设计图 */
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(255, 255, 255, 1) 55%);
+  background: radial-gradient(110% 65% at 16% 0%, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 38%, rgba(255, 255, 255, 1) 70%);
+}
+
+.security-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 16px 24px;
+}
+
+.security-card {
+  border-radius: 16px;
+  /* 柔和阴影 + 轻微绿色氛围 */
+  box-shadow: 0 14px 34px rgba(16, 185, 129, 0.10), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--ant-colorBorder, rgba(15, 23, 42, 0.06));
+}
+
+.security-footer-tip {
+  text-align: center;
+  margin-top: 16px;
+}
+

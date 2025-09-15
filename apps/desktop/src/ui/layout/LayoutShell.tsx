@@ -1,5 +1,9 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
+import { WindowControls } from '../system/WindowControls';
+import { ThemeToggle } from '../system/ThemeToggle';
+import { Button } from 'antd';
+import { Menu } from 'lucide-react';
 
 /**
  * LayoutShell: 左侧窄侧边栏 + 右侧内容区
@@ -10,16 +14,16 @@ export const LayoutShell: React.FC<React.PropsWithChildren> = ({ children }) => 
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   React.useEffect(() => {
-    const onToggle = () => setMobileOpen((v) => !v);
-    const onOpen = () => setMobileOpen(true);
-    const onClose = () => setMobileOpen(false);
-    window.addEventListener('mf:toggleSidebar', onToggle as any);
-    window.addEventListener('mf:openSidebar', onOpen as any);
-    window.addEventListener('mf:closeSidebar', onClose as any);
+    const onToggle: (ev: Event) => void = () => setMobileOpen((v) => !v);
+    const onOpen: (ev: Event) => void = () => setMobileOpen(true);
+    const onClose: (ev: Event) => void = () => setMobileOpen(false);
+    window.addEventListener('mf:toggleSidebar', onToggle);
+    window.addEventListener('mf:openSidebar', onOpen);
+    window.addEventListener('mf:closeSidebar', onClose);
     return () => {
-      window.removeEventListener('mf:toggleSidebar', onToggle as any);
-      window.removeEventListener('mf:openSidebar', onOpen as any);
-      window.removeEventListener('mf:closeSidebar', onClose as any);
+      window.removeEventListener('mf:toggleSidebar', onToggle);
+      window.removeEventListener('mf:openSidebar', onOpen);
+      window.removeEventListener('mf:closeSidebar', onClose);
     };
   }, []);
 
@@ -30,7 +34,27 @@ export const LayoutShell: React.FC<React.PropsWithChildren> = ({ children }) => 
         <div className="mf-sidebar-desktop">
           <Sidebar />
         </div>
-        <main className="mf-content cq cq-name">{children}</main>
+        <main className="mf-content cq cq-name">
+          {/* 固定标题栏：不随路由切换消失 */}
+          <div className="mf-titlebar titlebar titlebar-surface">
+            <div className="titlebar-no-drag mf-show-mobile" style={{ paddingRight: '0.25rem' }}>
+              <Button
+                aria-label="打开菜单"
+                type="text"
+                className="window-btn"
+                onClick={() => window.dispatchEvent(new Event('mf:toggleSidebar'))}
+              >
+                <Menu style={{ width: 16, height: 16 }} />
+              </Button>
+            </div>
+            <div className="mf-titlebar-spacer" />
+            <div className="mf-titlebar-actions">
+              <ThemeToggle />
+              <WindowControls />
+            </div>
+          </div>
+          {children}
+        </main>
       </div>
 
       {/* 移动端抽屉式侧边栏 */}

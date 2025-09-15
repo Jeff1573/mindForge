@@ -1,9 +1,5 @@
 import React from 'react';
 import { ChatSurface } from './ChatSurface';
-import { WindowControls } from '../system/WindowControls';
-import { ThemeToggle } from '../system/ThemeToggle';
-import { Button } from 'antd';
-import { Menu } from 'lucide-react';
 import { MessageList, type Message } from './MessageList';
 import { ChatInput } from './ChatInput';
 
@@ -24,24 +20,7 @@ export const ChatPanel: React.FC = () => {
 
   return (
     <ChatSurface>
-      {/* Header：左侧为拖拽区；移动端提供汉堡按钮；右侧为主题与窗口控制（禁止拖拽） */}
-      <div className="mf-titlebar titlebar titlebar-surface">
-        <div className="titlebar-no-drag mf-show-mobile" style={{ paddingRight: '0.25rem' }}>
-          <Button
-            aria-label="打开菜单"
-            type="text"
-            className="window-btn"
-            onClick={() => window.dispatchEvent(new Event('mf:toggleSidebar'))}
-          >
-            <Menu style={{ width: 16, height: 16 }} />
-          </Button>
-        </div>
-        <div className="mf-titlebar-spacer" />
-        <div className="mf-titlebar-actions">
-          <ThemeToggle />
-          <WindowControls />
-        </div>
-      </div>
+      {/* Header 已移至 LayoutShell，保持固定 */}
       {/* 主体区：消息列表 + 输入，加入内边距 */}
       <div className="mf-chat-body">
         <MessageList messages={messages} />

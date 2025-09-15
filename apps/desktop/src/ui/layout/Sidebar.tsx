@@ -38,6 +38,7 @@ export const Sidebar: React.FC = () => {
               setActive(it.key);
               if (it.key === 'indexer') navigate('/indexer');
               if (it.key === 'assistant' || it.key === 'chats') navigate('/chat');
+              if (it.key === 'settings') navigate('/settings/mcp');
             }}
           />
         ))}
