@@ -1,8 +1,19 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import path from 'node:path';
+import dotenv from 'dotenv';
+// 先加载 .env（优先根目录，其次 apps/desktop），不覆盖已存在的进程变量
+try {
+  const ROOT_ENV = path.resolve(__dirname, '../../..', '.env');
+  dotenv.config({ path: ROOT_ENV, override: false });
+  const APP_ENV = path.resolve(__dirname, '..', '.env');
+  dotenv.config({ path: APP_ENV, override: false });
+} catch { /* noop */ }
+
 // MCP：主进程最小客户端接口
 import { McpSessionManager } from './mcp/sessionManager';
 import type { SessionSpec } from './mcp/sessionManager';
+// LLM：最小接入（仅在主进程验证流式输出）
+import { runGeminiSmoke } from './llm/providers/gemini';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
@@ -182,7 +193,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('mcp/callTool', async (_e, id: string, name: string, args?: Record<string, unknown>) => {
     const s = mcp.get(id);
     if (!s) throw new Error(`Session not found: ${id}`);
-    return await s.client.callTool(name, args as any);
+    return await s.client.callTool(name, args as Record<string, unknown> | undefined);
   });
   ipcMain.handle('mcp/stop', async (_e, id: string) => {
     const s = mcp.get(id);
@@ -195,4 +206,8 @@ app.whenReady().then(async () => {
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) await createWindow();
   });
+
+  // 可选：在主进程控制台进行 LLM 流式验证（设置 LLM_SMOKE=1 开启）
+  // 说明：不会阻塞应用启动；失败会打印错误但不影响应用运行。
+  runGeminiSmoke().catch(() => {/* 已在内部记录错误 */});
 });

@@ -16,6 +16,7 @@
   "include": [
     "electron/main.ts",
     "electron/preload.ts",
-    "electron/mcp/**/*.ts"
+    "electron/mcp/**/*.ts",
+    "electron/llm/**/*.ts"
   ]
 }
