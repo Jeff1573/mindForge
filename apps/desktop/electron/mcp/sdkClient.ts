@@ -11,15 +11,20 @@ import {
   Client,
   type ClientOptions as SdkClientOptions,
 } from '@modelcontextprotocol/sdk/client/index.js';
+import type { AnyTransport } from './sdkTransportFactory';
 // 说明：为避免对 SDK 内部路径的直接类型依赖，这里对 Transport 使用最小 any 类型。
 // SDK 在运行时会通过 connect() 进行校验，类型弱化不影响安全性。
-type AnyTransport = any;
+// 使用工厂导出的精确传输联合类型
+// 统一避免 any，提高关闭/协议版本读取时的类型提示
+// 注意：不同传输实现可能未公开相同属性，访问前需做存在性检查
+
 
 // 类型：与旧实现保持最小对齐（只暴露调用所需字段）
 export interface McpInitializeResult {
   protocolVersion: string | undefined;
-  capabilities: Record<string, unknown> | undefined;
-  serverInfo: { name: string; version: string } | undefined;
+  // 使用 Client 实例派生的返回类型，避免宽泛的 Record
+  capabilities: ReturnType<Client['getServerCapabilities']> | undefined;
+  serverInfo: ReturnType<Client['getServerVersion']> | undefined;
   instructions?: string | undefined;
 }
 
@@ -57,9 +62,12 @@ export class SdkMcpClient extends EventEmitter {
     };
 
     // 通知桥接：统一转发，并对 list_changed 做兼容事件名
-    this.sdk.fallbackNotificationHandler = async (n: any) => {
+    // 统一转发 SDK 的通知；对旧事件名做兼容映射
+    this.sdk.fallbackNotificationHandler = async (n) => {
       try {
-        if (n?.method === 'notifications/tools/list_changed') {
+        // 仅在具备 method 字段且为目标字符串时触发兼容事件
+        if (n && typeof (n as { method?: unknown }).method === 'string' &&
+            (n as { method: string }).method === 'notifications/tools/list_changed') {
           this.emit('tools:listChanged');
         }
         this.emit('notification', n);
@@ -79,28 +87,42 @@ export class SdkMcpClient extends EventEmitter {
    * 与旧接口对齐：返回握手信息（从 SDK getter 读取）
    */
   async initialize(): Promise<McpInitializeResult> {
+    let protocolVersion: string | undefined;
+    const t = this.transport as unknown;
+    if (t && typeof t === 'object' && 'protocolVersion' in (t as Record<string, unknown>)) {
+      const pv = (t as { protocolVersion?: unknown }).protocolVersion;
+      protocolVersion = typeof pv === 'string' ? pv : undefined;
+    }
     return {
-      protocolVersion: (this.transport as any)?.protocolVersion ?? undefined,
-      capabilities: this.sdk.getServerCapabilities() as any,
-      serverInfo: this.sdk.getServerVersion() as any,
+      protocolVersion,
+      capabilities: this.sdk.getServerCapabilities(),
+      serverInfo: this.sdk.getServerVersion(),
       instructions: this.sdk.getInstructions?.(),
     };
   }
 
   /** 列出工具（支持 cursor） */
-  async listTools(cursor?: string): Promise<any> {
+  async listTools(cursor?: string) {
     const params = cursor ? { cursor } : undefined;
-    return await this.sdk.listTools(params as any);
+    return await this.sdk.listTools(params);
   }
 
   /** 调用工具 */
-  async callTool(name: string, args?: Record<string, unknown>): Promise<any> {
-    return await this.sdk.callTool({ name, arguments: args ?? {} } as any);
+  async callTool(name: string, args?: Record<string, unknown>) {
+    return await this.sdk.callTool({ name, arguments: args ?? {} });
   }
 
   /** 停止并关闭底层连接 */
   async stop(): Promise<void> {
-    try { await (this.sdk as any)?.transport?.close?.(); } catch { /* noop */ }
+    try {
+      const tr = this.transport as unknown;
+      const closeFn = (tr && typeof tr === 'object' && 'close' in (tr as Record<string, unknown>)
+        ? (tr as { close?: () => unknown }).close
+        : undefined);
+      if (typeof closeFn === 'function') {
+        await closeFn.call(tr);
+      }
+    } catch { /* noop */ }
   }
 }
 

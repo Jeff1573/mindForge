@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../electron/preload.ts"],
-  "sourcesContent": ["import { contextBridge, ipcRenderer } from 'electron';\r\n\r\n// \u4E2D\u6587\u6CE8\u91CA\uFF1A\u901A\u8FC7\u5B89\u5168\u767D\u540D\u5355 API \u66B4\u9732\u5FC5\u8981\u80FD\u529B\u7ED9\u6E32\u67D3\u5668\r\nconst api = {\r\n  minimize: () => ipcRenderer.send('window:minimize'),\r\n  toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),\r\n  isMaximized: async () => ipcRenderer.invoke('window:is-maximized') as Promise<boolean>,\r\n  close: () => ipcRenderer.send('window:close'),\r\n  onResized: (cb: () => void) => {\r\n    const handler = () => cb();\r\n    ipcRenderer.on('window:resized', handler);\r\n    return () => ipcRenderer.removeListener('window:resized', handler);\r\n  },\r\n  getPlatform: async () => ipcRenderer.invoke('get-platform') as Promise<'windows' | 'mac' | 'linux'>,\r\n};\r\n\r\ncontextBridge.exposeInMainWorld('api', api);\r\n\r\nexport type PreloadApi = typeof api;\r\n\r\n\r\n"],
-  "mappings": ";;;;;;;;;;;;;;;;AAAA;AAAA;AAAA,sBAA2C;AAG3C,IAAM,MAAM;AAAA,EACV,UAAU,MAAM,4BAAY,KAAK,iBAAiB;AAAA,EAClD,gBAAgB,MAAM,4BAAY,KAAK,wBAAwB;AAAA,EAC/D,aAAa,YAAY,4BAAY,OAAO,qBAAqB;AAAA,EACjE,OAAO,MAAM,4BAAY,KAAK,cAAc;AAAA,EAC5C,WAAW,CAAC,OAAmB;AAC7B,UAAM,UAAU,MAAM,GAAG;AACzB,gCAAY,GAAG,kBAAkB,OAAO;AACxC,WAAO,MAAM,4BAAY,eAAe,kBAAkB,OAAO;AAAA,EACnE;AAAA,EACA,aAAa,YAAY,4BAAY,OAAO,cAAc;AAC5D;AAEA,8BAAc,kBAAkB,OAAO,GAAG;",
-  "names": []
-}

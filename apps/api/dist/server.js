@@ -1,5 +1,5 @@
 // src/server.ts
-import { getEnv as getEnv2, logger } from "@mindforge/shared";
+import { getEnv, logger } from "@mindforge/shared";
 
 // src/app.ts
 import Fastify from "fastify";
@@ -14,7 +14,7 @@ function buildApp() {
 // src/server.ts
 var PORT = Number(process.env.PORT || 4e3);
 async function start() {
-  const env = getEnv2();
+  const env = getEnv();
   const app = buildApp();
   logger.info("\u542F\u52A8 API\uFF0C\u73AF\u5883\uFF1A", env.NODE_ENV, "| AI_PROVIDER:", env.AI_PROVIDER);
   try {

@@ -14,8 +14,41 @@ import {
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { McpTransportConfig } from './config';
+import { URL } from 'node:url';
 
-export type AnyTransport = any; // 避免直接依赖 SDK 内部类型路径
+// 更精确的传输联合类型，覆盖当前客户端支持的三种传输方式
+export type AnyTransport =
+  | StdioClientTransport
+  | StreamableHTTPClientTransport
+  | SSEClientTransport;
+
+// 用于在联合穷尽时得到可靠的编译期提示
+function assertNever(x: never): never {
+  throw new Error('不支持的 transport.kind: ' + String(x));
+}
+
+// 将部分可选的重连配置安全收敛为 SDK 期望的完整结构；
+// 若字段不完整，则返回 undefined 以沿用 SDK 默认值。
+function toReconnectionOptions(
+  p?: Partial<{
+    maxReconnectionDelay: number;
+    initialReconnectionDelay: number;
+    reconnectionDelayGrowFactor: number;
+    maxRetries: number;
+  }>,
+): StreamableHTTPClientTransportOptions['reconnectionOptions'] {
+  if (!p) return undefined;
+  const { maxReconnectionDelay, initialReconnectionDelay, reconnectionDelayGrowFactor, maxRetries } = p;
+  if (
+    typeof maxReconnectionDelay === 'number' &&
+    typeof initialReconnectionDelay === 'number' &&
+    typeof reconnectionDelayGrowFactor === 'number' &&
+    typeof maxRetries === 'number'
+  ) {
+    return { maxReconnectionDelay, initialReconnectionDelay, reconnectionDelayGrowFactor, maxRetries };
+  }
+  return undefined;
+}
 
 /** 创建不带连接副作用的传输实例 */
 export function createSdkTransport(cfg: McpTransportConfig): AnyTransport {
@@ -25,24 +58,24 @@ export function createSdkTransport(cfg: McpTransportConfig): AnyTransport {
       args: cfg.args,
       cwd: cfg.cwd,
       env: cfg.env,
-      stderr: (cfg.stderr as any) ?? 'inherit',
+      stderr: cfg.stderr ?? 'inherit',
     });
   }
   if (cfg.kind === 'http') {
     const opts: StreamableHTTPClientTransportOptions = {
       requestInit: cfg.headers ? { headers: cfg.headers } : undefined,
-      reconnectionOptions: cfg.reconnection as any,
+      reconnectionOptions: toReconnectionOptions(cfg.reconnection),
       sessionId: cfg.sessionId,
     };
     return new StreamableHTTPClientTransport(new URL(cfg.url), opts);
   }
   if (cfg.kind === 'sse') {
     return new SSEClientTransport(new URL(cfg.url), {
-      eventSourceInit: cfg.headers ? ({ headers: cfg.headers } as any) : undefined,
+      // 注：EventSourceInit 无 headers 字段；headers 放入 requestInit
       requestInit: cfg.headers ? { headers: cfg.headers } : undefined,
     });
   }
-  throw new Error(`不支持的 transport.kind: ${(cfg as any)?.kind}`);
+  return assertNever(cfg as never);
 }
 
 /**
@@ -70,7 +103,7 @@ export async function connectWithHttpSseFallback(
   }
   if (!options?.httpOnly) {
     const sse = new SSEClientTransport(url, {
-      eventSourceInit: options?.headers ? ({ headers: options.headers } as any) : undefined,
+      // 注：EventSourceInit 无 headers 字段；headers 放入 requestInit
       requestInit: options?.headers ? { headers: options.headers } : undefined,
     });
     await client.connect(sse);
@@ -78,4 +111,3 @@ export async function connectWithHttpSseFallback(
   }
   throw new Error('HTTP→SSE 回退失败：未能建立连接');
 }
-

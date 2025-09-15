@@ -74,26 +74,33 @@ export function loadMcpConfig(configPath?: string): McpConfigFile {
   } catch (e) {
     throw new Error(`mcp.json 解析失败：${(e as Error).message}`);
   }
-  // 仅支持 { mcpServers: { name: { url, headers } } } 格式
-  if (data && typeof data === 'object' && 'mcpServers' in (data as any)) {
-    const map = (data as McpServersMapConfig).mcpServers;
-    if (!map || typeof map !== 'object') {
-      throw new Error('mcp.json 格式错误：mcpServers 必须是对象');
+  // 仅支持 { mcpServers: { name: { url, headers? } } } 格式
+  const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+  const isHeaders = (v: unknown): v is Record<string, string> => {
+    if (!isObject(v)) return false;
+    for (const [k, val] of Object.entries(v)) {
+      if (typeof k !== 'string' || typeof val !== 'string') return false;
     }
+    return true;
+  };
+  if (isObject(data) && 'mcpServers' in data) {
+    const rawMap = (data as { mcpServers?: unknown }).mcpServers;
+    if (!isObject(rawMap)) throw new Error('mcp.json 格式错误：mcpServers 必须是对象');
     const clients: McpClientConfig[] = [];
-    for (const [name, s] of Object.entries(map)) {
-      if (!s || typeof s !== 'object' || !("url" in (s as any)) || !(s as any).url) {
-        // 忽略不完整项（如仅占位未配置 url）
-        continue;
-      }
+    for (const [name, s] of Object.entries(rawMap as Record<string, unknown>)) {
+      if (!isObject(s)) continue;
+      const url = (s as { url?: unknown }).url;
+      const headers = (s as { headers?: unknown }).headers;
+      if (typeof url !== 'string') continue; // 忽略不完整项
+      if (headers !== undefined && !isHeaders(headers)) continue; // 非法 headers 直接忽略
       clients.push({
         id: name,
         client: undefined,
-        transport: { kind: 'http', url: (s as any).url, headers: (s as any).headers },
+        transport: { kind: 'http', url, headers: headers as Record<string, string> | undefined },
       });
     }
     if (clients.length === 0) throw new Error('mcp.json 未包含可用的 mcpServers（均缺少 url）');
-    return { clients } as McpConfigFile;
+    return { clients };
   }
   throw new Error('mcp.json 格式错误：仅支持 { mcpServers: { <name>: { url, headers? } } }');
 }

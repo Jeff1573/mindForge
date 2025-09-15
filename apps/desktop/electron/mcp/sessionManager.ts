@@ -7,16 +7,40 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { URL } from 'node:url';
 import { SdkMcpClient, type McpInitializeResult } from './sdkClient';
 import { createSdkTransport } from './sdkTransportFactory';
 import { loadMcpConfig, type McpTransportConfig } from './config';
-import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StreamableHTTPClientTransport, StreamableHTTPError, type StreamableHTTPClientTransportOptions } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import type { ClientOptions as SdkClientOptions } from '@modelcontextprotocol/sdk/client/index.js';
 
 export interface SessionSpec {
   id: string;
   transport: McpTransportConfig;
-  client?: { name?: string; version?: string; capabilities?: Record<string, unknown> };
+  client?: { name?: string; version?: string; capabilities?: SdkClientOptions['capabilities'] };
+}
+
+// 本地化：将部分重连参数在存在且完整时传递给 SDK，否则使用其默认值
+function toReconnectionOptions(
+  p?: Partial<{
+    maxReconnectionDelay: number;
+    initialReconnectionDelay: number;
+    reconnectionDelayGrowFactor: number;
+    maxRetries: number;
+  }>,
+): StreamableHTTPClientTransportOptions['reconnectionOptions'] {
+  if (!p) return undefined;
+  const { maxReconnectionDelay, initialReconnectionDelay, reconnectionDelayGrowFactor, maxRetries } = p;
+  if (
+    typeof maxReconnectionDelay === 'number' &&
+    typeof initialReconnectionDelay === 'number' &&
+    typeof reconnectionDelayGrowFactor === 'number' &&
+    typeof maxRetries === 'number'
+  ) {
+    return { maxReconnectionDelay, initialReconnectionDelay, reconnectionDelayGrowFactor, maxRetries };
+  }
+  return undefined;
 }
 
 export interface SessionHandle {
@@ -42,7 +66,7 @@ export class McpSessionManager extends EventEmitter {
         name: spec.client?.name ?? this.defaultClientInfo.name,
         version: spec.client?.version ?? this.defaultClientInfo.version,
       },
-      capabilities: spec.client?.capabilities as any,
+      capabilities: spec.client?.capabilities,
     });
 
     const handle: SessionHandle = {
@@ -53,7 +77,7 @@ export class McpSessionManager extends EventEmitter {
           try {
             const http = new StreamableHTTPClientTransport(new URL(spec.transport.url), {
               requestInit: spec.transport.headers ? { headers: spec.transport.headers } : undefined,
-              reconnectionOptions: spec.transport.reconnection as any,
+              reconnectionOptions: toReconnectionOptions(spec.transport.reconnection),
               sessionId: spec.transport.sessionId,
             });
             await client.start(http);
@@ -62,7 +86,7 @@ export class McpSessionManager extends EventEmitter {
             if (!(code && code >= 400 && code < 500)) throw err;
             // 回退到 SSE
             const sse = new SSEClientTransport(new URL(spec.transport.url), {
-              eventSourceInit: spec.transport.headers ? ({ headers: spec.transport.headers } as any) : undefined,
+              // 注：EventSourceInit 无 headers 字段；headers 放入 requestInit
               requestInit: spec.transport.headers ? { headers: spec.transport.headers } : undefined,
             });
             await client.start(sse);

@@ -46,3 +46,12 @@
 ```
 
 > 注意：当 HTTP 服务端返回 4xx（例如不支持 Streamable HTTP）时，客户端会自动回退到 SSE 以保持兼容。
+
+## 类型与实现约束（v1.18.0）
+
+- 传输联合类型：`AnyTransport = StdioClientTransport | StreamableHTTPClientTransport | SSEClientTransport`。
+- HTTP 重连参数：仅当 `maxReconnectionDelay`、`initialReconnectionDelay`、`reconnectionDelayGrowFactor`、`maxRetries` 四个字段全部提供时才生效；否则使用 SDK 默认值。
+- SSE 头部：由于 `EventSourceInit` 无 `headers` 字段，所有头部通过 `requestInit.headers` 传递。
+- `SdkMcpClient.initialize()` 返回结构：
+  - `protocolVersion` 从底层传输按存在性读取（并非 SDK API 的一部分，可能为 `undefined`）。
+  - `capabilities` 与 `serverInfo` 均直接来源于 SDK 的 `getServerCapabilities()` 与 `getServerVersion()`。
