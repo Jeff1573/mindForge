@@ -13,7 +13,7 @@ try {
 import { McpSessionManager } from './mcp/sessionManager';
 import type { SessionSpec } from './mcp/sessionManager';
 // LLM：最小接入（仅在主进程验证流式输出）
-import { runGeminiSmoke } from './llm/providers/gemini';
+import { runLLMSmoke } from './llm/smoke';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
@@ -209,5 +209,5 @@ app.whenReady().then(async () => {
 
   // 可选：在主进程控制台进行 LLM 流式验证（设置 LLM_SMOKE=1 开启）
   // 说明：不会阻塞应用启动；失败会打印错误但不影响应用运行。
-  runGeminiSmoke().catch(() => {/* 已在内部记录错误 */});
+  runLLMSmoke().catch(() => {/* 已在内部记录错误 */});
 });

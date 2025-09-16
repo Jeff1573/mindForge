@@ -99,26 +99,6 @@ export async function streamText(
  * 受环境变量 `LLM_SMOKE=1` 控制是否执行。
  */
 export async function runGeminiSmoke() {
-  console.log('runGeminiSmoke');
-  const enabled = process.env.LLM_SMOKE === '1';
-  if (!enabled) return;
-  const prompt = process.env.LLM_SMOKE_PROMPT ?? '请用一句中文介绍你自己，并控制在 30 字以内。';
-  try {
-    console.log('[GeminiSmoke] 启动：model=%s', 'gemini-2.5-flash');
-    const iter = await streamText(prompt);
-    let acc = '';
-    for await (const piece of iter) {
-      acc += piece;
-      // 即时打印，便于观察真实流
-      process.stdout.write(piece);
-    }
-    console.log('\n[GeminiSmoke] 完成，总长度=%d', acc.length);
-  } catch (err) {
-    const e = err as { message?: string; response?: { status?: number } } | undefined;
-    const message = e?.message ?? String(err);
-    console.error('[GeminiSmoke] 失败：%s', message);
-    if (e?.response?.status) {
-      console.error('[GeminiSmoke] 状态码：%s', e.response.status);
-    }
-  }
+  const mod = (await dynamicImport('../smoke')) as typeof import('../smoke');
+  await mod.runLLMSmoke({ provider: 'gemini', force: true });
 }

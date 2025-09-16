@@ -5,17 +5,24 @@ import { z } from 'zod';
 // 说明：为满足“先能跑”的目标，非关键项标记为可选。
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  AI_PROVIDER: z.enum(['gemini', 'openai']).default('gemini'),
+  AI_PROVIDER: z.enum(['gemini', 'google', 'openai', 'anthropic', 'groq']).default('gemini'),
   AI_MODEL: z.string().min(1, 'AI_MODEL 不能为空').optional(),
   AI_API_KEY: z.string().min(1, 'AI_API_KEY 不能为空').optional(),
-  QDRANT_URL: z.string().url('QDRANT_URL 必须为合法 URL').optional(),
-  QDRANT_API_KEY: z.string().optional(),
-  QDRANT_COLLECTION: z.string().default('docs'),
-  MCP_SERVER_URL: z.string().optional(),
-  MCP_API_KEY: z.string().optional()
+  AI_BASE_URL: z.string().url('AI_BASE_URL 必须为合法 URL').optional(),
+  OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY 不能为空').optional(),
+  ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY 不能为空').optional(),
+  GOOGLE_API_KEY: z.string().min(1, 'GOOGLE_API_KEY 不能为空').optional(),
+  GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY 不能为空').optional(),
+  GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY 不能为空').optional(),
+  // QDRANT_URL: z.string().url('QDRANT_URL 必须为合法 URL').optional(),
+  // QDRANT_API_KEY: z.string().optional(),
+  // QDRANT_COLLECTION: z.string().default('docs'),
+  // MCP_SERVER_URL: z.string().optional(),
+  // MCP_API_KEY: z.string().optional()
 });
 
 export type Env = z.infer<typeof envSchema>;
+export type AIProvider = Env['AI_PROVIDER'];
 
 let cachedEnv: Env | null = null;
 
@@ -44,4 +51,3 @@ export function getPublicEnv() {
   const { AI_PROVIDER, AI_MODEL, QDRANT_COLLECTION, NODE_ENV } = getEnv();
   return { AI_PROVIDER, AI_MODEL, QDRANT_COLLECTION, NODE_ENV } as const;
 }
-
