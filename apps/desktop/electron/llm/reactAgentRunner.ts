@@ -57,6 +57,7 @@ export async function runReactAgent(
   options: ReactAgentRunOptions = {}
 ): Promise<{ content: string; steps: ReactAgentStep[]; systemPromptExcerpt: string }> {
   try {
+    // 中文注释：获取共享实例的 ReAct Agent（内部已缓存，避免重复构建）。
     const agent = await getReactAgent();
     const baseMessages = toAgentMessages(messages);
     const input = await ensureAgentInput(baseMessages);
