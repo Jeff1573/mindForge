@@ -14,6 +14,7 @@ import { createAnthropicClient } from './providers/anthropic';
 import { createGoogleClient } from './providers/google';
 import { createGroqClient } from './providers/groq';
 import { runtimeImport, extractContentText } from './utils/langchain';
+import { loadRolePrompt } from '../prompts/loader';
 
 const clientCache: Partial<Record<string, LLMClient>> = {};
 
@@ -25,9 +26,10 @@ export type FactoryOptions = {
   temperature?: number;
   maxTokens?: number;
   maxRetries?: number;
+  roleId?: string;
 };
 
-type ProviderInitOptions = Omit<FactoryOptions, 'provider'>;
+type ProviderInitOptions = Omit<FactoryOptions, 'provider' | 'roleId'>;
 
 function validateMessages(messages: LLMMessage[]) {
   if (!messages?.length) {
@@ -41,7 +43,7 @@ function shouldBypassCache(opts?: FactoryOptions) {
 }
 
 function stripProvider(opts: FactoryOptions): ProviderInitOptions {
-  const { provider: _provider, ...rest } = opts;
+  const { provider: _provider, roleId: _roleId, ...rest } = opts;
   return rest;
 }
 
@@ -104,12 +106,14 @@ export async function withPrompt(messages: LLMMessage[], options?: LLMCallOption
 }
 
 export async function runPromptWithTemplate({
-  system = '你是严谨的助手。',
+  roleId,
+  system,
   template = '{q}',
   variables = {},
   options,
   factoryOptions
 }: {
+  roleId?: string;
   system?: string;
   template?: string;
   variables?: Record<string, string>;
@@ -120,8 +124,19 @@ export async function runPromptWithTemplate({
     '@langchain/core/prompts'
   );
 
+  const resolvedRoleId = roleId ?? factoryOptions?.roleId;
+  let systemPrompt = system?.trim();
+
+  if (!systemPrompt) {
+    // 若未显式提供 system，则按角色加载集中配置
+    const { content } = await loadRolePrompt(resolvedRoleId);
+    systemPrompt = content;
+  }
+
+  const finalSystem = systemPrompt ?? '你是严谨的助手。';
+
   const prompt = ChatPromptTemplate.fromMessages([
-    ['system', system],
+    ['system', finalSystem],
     ['human', template]
   ]);
 
@@ -153,3 +168,4 @@ export async function invokeRawPrompt(prompt: string, opts?: FactoryOptions & { 
   const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
   return invokeLLM({ messages, options: opts?.options }, opts);
 }
+
