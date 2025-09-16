@@ -14,9 +14,17 @@ import { McpSessionManager } from './mcp/sessionManager';
 import type { SessionSpec } from './mcp/sessionManager';
 // LLM：最小接入（仅在主进程验证流式输出）
 import { runLLMSmoke } from './llm/smoke';
+import { runReactAgent } from './llm/reactAgentRunner';
+import { runReactAgentSmoke } from './llm/reactAgentSmoke';
+import type { LLMMessage } from './llm/types';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
+
+type ReactAgentPayload = {
+  messages: LLMMessage[];
+  threadId?: string;
+};
 
 
 function getPlatformTag(): 'windows' | 'mac' | 'linux' {
@@ -202,6 +210,20 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
+  ipcMain.handle('agent:react:invoke', async (_e, payload: ReactAgentPayload) => {
+    try {
+      if (!payload || !Array.isArray(payload.messages) || !payload.messages.length) {
+        throw new Error('agent:react:invoke 参数不合法');
+      }
+      const result = await runReactAgent(payload.messages, { threadId: payload.threadId });
+      console.info('[ipc][agent:react:invoke] 已完成一次 ReAct 调用');
+      return result;
+    } catch (err) {
+      console.error('[ipc][agent:react:invoke] 调用失败:', err);
+      throw err;
+    }
+  });
+
   await createWindow();
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) await createWindow();
@@ -210,4 +232,5 @@ app.whenReady().then(async () => {
   // 可选：在主进程控制台进行 LLM 流式验证（设置 LLM_SMOKE=1 开启）
   // 说明：不会阻塞应用启动；失败会打印错误但不影响应用运行。
   runLLMSmoke().catch(() => {/* 已在内部记录错误 */});
+  runReactAgentSmoke().catch(() => {/* 已在内部记录错误 */});
 });
