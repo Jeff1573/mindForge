@@ -1,4 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
+// 类型仅用于声明，避免将主进程实现细节引入到预加载产物
+import type { LLMMessage } from './llm/types';
+import type { ReactAgentStep } from './llm/reactAgentRunner';
 import type { SessionSpec } from './mcp/sessionManager';
 import type { McpInitializeResult } from './mcp/sdkClient';
 
@@ -66,6 +69,20 @@ const api = {
       ipcRenderer.on(ch, h);
       return () => ipcRenderer.removeListener(ch, h);
     },
+  },
+
+  // ========== Agent（ReAct 调用最小桥接） ==========
+  // 说明：
+  // - 为测试与开发用途暴露到 renderer；仅封装 IPC 通道，不做任何业务处理。
+  // - 约束：payload.messages 至少包含一条消息；消息结构遵循 LLMMessage（system/user/assistant）。
+  // - 边界：当前仅一次性返回，不提供流式更新；长耗时由前端负责展示 loading。
+  agent: {
+    reactInvoke: (payload: { messages: LLMMessage[]; threadId?: string }) =>
+      ipcRenderer.invoke('agent:react:invoke', payload) as Promise<{
+        content: string;
+        steps: ReactAgentStep[];
+        systemPromptExcerpt: string;
+      }>,
   },
 };
 

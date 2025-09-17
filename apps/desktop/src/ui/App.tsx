@@ -36,6 +36,14 @@ export default function App() {
   const [reportPath, setReportPath] = useState<string>("");
   const [log, setLog] = useState<string[]>([]);
 
+  // ========== Agent 最小可行测试界面状态 ==========
+  // 为何：用于最小化验证主进程 IPC `agent:react:invoke`。
+  // 约束：非流式，仅展示一次性返回内容与步骤；错误写入日志。
+  // 边界：不做会话复用与历史持久化。
+  const [agentPrompt, setAgentPrompt] = useState<string>('');
+  const [agentLoading, setAgentLoading] = useState<boolean>(false);
+  const [agentLogs, setAgentLogs] = useState<string[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canUseWebkitDir = useMemo(() => typeof document !== "undefined", []);
@@ -304,6 +312,95 @@ export default function App() {
                 </div>
               )}
             </Space>
+          </Space>
+        </Card>
+
+        {/* ========== Agent 测试卡片（最小可行） ========== */}
+        <Card bodyStyle={{ padding: 24, marginTop: 16 }} className="security-card">
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <div>
+              <Space size="small" align="center" style={{ marginBottom: 8 }}>
+                <PlayCircleFilled style={{ color: '#2563eb' }} />
+                <Typography.Text strong>Agent 测试（调用 agent:react:invoke）</Typography.Text>
+              </Space>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
+                输入一段提示词，点击“执行”后在下方查看 Agent 的执行步骤与最终回复。
+              </Typography.Paragraph>
+              <Input.TextArea
+                value={agentPrompt}
+                onChange={(e) => setAgentPrompt(e.target.value)}
+                autoSize={{ minRows: 3, maxRows: 6 }}
+                placeholder="例如：请概述本应用内 Agent 的组成并给出 3 条改进建议"
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                <Button
+                  type="primary"
+                  icon={agentLoading ? <LoadingOutlined /> : <PlayCircleFilled />}
+                  loading={agentLoading}
+                  onClick={async () => {
+                    if (!agentPrompt?.trim() || agentLoading) return;
+                    setAgentLoading(true);
+                    setAgentLogs(["[开始] 提交至主进程 agent:react:invoke…"]);
+                    try {
+                      // 说明：最小消息结构，仅发送一条 user 消息
+                      const payload = { messages: [{ role: 'user', content: agentPrompt.trim() }] } as const;
+                      const res = await window.api.agent.reactInvoke(payload as any);
+                      // 展示系统提示片段，便于确认角色设定
+                      setAgentLogs((prev) => [
+                        ...prev,
+                        `systemPromptExcerpt: ${res?.systemPromptExcerpt ?? ''}`,
+                      ]);
+                      // 展示推理步骤（安全处理未知结构）
+                      const steps = Array.isArray(res?.steps) ? res.steps : [];
+                      for (let i = 0; i < steps.length; i++) {
+                        const s: any = steps[i] ?? {};
+                        const calls = (() => {
+                          try {
+                            return s?.toolCalls ? ` toolCalls=${JSON.stringify(s.toolCalls)}` : '';
+                          } catch { return ' toolCalls=[Unserializable]'; }
+                        })();
+                        setAgentLogs((prev) => [
+                          ...prev,
+                          `step#${i + 1} role=${s?.role ?? '?'} => ${String(s?.content ?? '')}${calls}`,
+                        ]);
+                      }
+                      setAgentLogs((prev) => [
+                        ...prev,
+                        `final: ${String(res?.content ?? '')}`,
+                        '[完成]'
+                      ]);
+                    } catch (err) {
+                      setAgentLogs((prev) => [
+                        ...prev,
+                        `错误：${(err as Error)?.message ?? String(err)}`,
+                      ]);
+                    } finally {
+                      setAgentLoading(false);
+                    }
+                  }}
+                >
+                  {agentLoading ? '执行中…' : '执行'}
+                </Button>
+              </div>
+            </div>
+
+            {/* 日志列表 */}
+            <div
+              style={{
+                border: `1px solid ${token.colorBorder}`,
+                borderRadius: token.borderRadiusLG,
+                padding: 12,
+              }}
+            >
+              <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>Agent 执行日志</div>
+              <div style={{ maxHeight: 240, overflow: 'auto' }}>
+                <List
+                  size="small"
+                  dataSource={agentLogs}
+                  renderItem={(item) => <List.Item style={{ padding: '4px 0' }}>• {item}</List.Item>}
+                />
+              </div>
+            </div>
           </Space>
         </Card>
 

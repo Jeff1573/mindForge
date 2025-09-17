@@ -37,10 +37,10 @@
     "vite": "latest"
   },
   "scripts": {
-    "dev": "concurrently -n TSC,DEV -c magenta,green \"tsc -p tsconfig.electron.json -w\" \"node scripts/dev.cjs\"",
+    "dev": "concurrently -n PROMPTS,TSC,DEV -c yellow,magenta,green \"node scripts/watch-prompts.cjs\" \"tsc -p tsconfig.electron.json -w\" \"node scripts/dev.cjs\"",
     "check": "vite build --emptyOutDir",
     "start": "electron .",
-    "build": "vite build && tsc -p tsconfig.electron.json",
+    "build": "vite build && tsc -p tsconfig.electron.json && node scripts/copy-prompts.cjs && node scripts/check-prompts.cjs",
     "build:electron": "tsc -p tsconfig.electron.json && node scripts/copy-prompts.cjs",
     "build:renderer": "vite build",
     "lint": "eslint .",
