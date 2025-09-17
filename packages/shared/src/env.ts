@@ -14,9 +14,9 @@ export const envSchema = z.object({
   GOOGLE_API_KEY: z.string().min(1, 'GOOGLE_API_KEY 不能为空').optional(),
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY 不能为空').optional(),
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY 不能为空').optional(),
-  // QDRANT_URL: z.string().url('QDRANT_URL 必须为合法 URL').optional(),
-  // QDRANT_API_KEY: z.string().optional(),
-  // QDRANT_COLLECTION: z.string().default('docs'),
+  QDRANT_URL: z.string().url('QDRANT_URL 必须为合法 URL').optional(),
+  QDRANT_API_KEY: z.string().optional(),
+  QDRANT_COLLECTION: z.string().default('docs'),
   // MCP_SERVER_URL: z.string().optional(),
   // MCP_API_KEY: z.string().optional()
 });

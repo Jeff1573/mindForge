@@ -35,8 +35,7 @@
 ```json
 {
   "mcpServers": {
-    "context7": {
-      "url": "https://mcp.context7.com/mcp",
+    "context7": {\n      "type": "http",\n      "url": "https://mcp.context7.com/mcp",
       "headers": {
         "CONTEXT7_API_KEY": "ctx7sk-..."
       }
@@ -55,3 +54,26 @@
 - `SdkMcpClient.initialize()` 返回结构：
   - `protocolVersion` 从底层传输按存在性读取（并非 SDK API 的一部分，可能为 `undefined`）。
   - `capabilities` 与 `serverInfo` 均直接来源于 SDK 的 `getServerCapabilities()` 与 `getServerVersion()`。
+
+## Demo CLI（最小实现）
+
+- 运行（默认读取 apps/desktop/mcp.json）：
+
+`
+npm run mcp:demo --workspace=@mindforge/desktop -- --config apps/desktop/mcp.json
+`
+
+- 仅连接指定 server：
+
+`
+npm run mcp:demo --workspace=@mindforge/desktop -- --config apps/desktop/mcp.json --id context7
+`
+
+- 类型检查（仅限 mcp 目录，忽略 LLM 相关类型复杂度）：
+
+`
+npm run check:mcp --workspace=@mindforge/desktop
+`
+
+> 脚本基于现有 McpSessionManager，按顺序执行 start → initialize → listTools，并在 stdout 输出连接状态、工具名称及摘要。
+

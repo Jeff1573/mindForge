@@ -48,7 +48,7 @@ async function resolveAgentSystemPrompt(): Promise<string> {
 }
 
 // 中文注释：根据环境变量动态选择 LLM（OpenAI 或 Gemini）。
-function createLLMFromEnv(): LanguageModelLike {
+function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageModelLike {
   const env = getEnv();
   const provider = env.AI_PROVIDER;
   const modelName = env.AI_MODEL?.trim();
@@ -76,7 +76,9 @@ function createLLMFromEnv(): LanguageModelLike {
     model: modelName || 'gpt-4o-mini',
     temperature: 0,
     maxRetries: 2,
-    configuration: baseURL ? { baseURL } : undefined
+    configuration: baseURL ? { baseURL } : undefined,
+    // 用于 Remote MCP
+    useResponsesApi: !!opts?.openAiUseResponsesApi,
   });
 }
 
@@ -84,10 +86,22 @@ function createLLMFromEnv(): LanguageModelLike {
 export async function getReactAgent(): Promise<ReactAgent> {
   if (cachedAgent) return cachedAgent;
   const systemPrompt = await resolveAgentSystemPrompt();
-  // 中文注释：使用 prompts 模块生成的 system prompt 作为 Agent 初始指令。
-  const llm = createLLMFromEnv();
-  // 避免 LangGraph 类型在 TS 下产生“类型实例化过深”的问题，结果做宽化处理。
-  cachedAgent = createReactAgent({ llm, tools: [calculatorTool], prompt: systemPrompt });
+
+  // 依据 mcp.json 构建 MCP 集成（Remote MCP + 本地 stdio）
+  const { resolveMcpForLangChain } = await import('../mcp/mcpIntegration');
+  const mcp = await resolveMcpForLangChain();
+
+  // OpenAI + Remote MCP 需要 useResponsesApi
+  const llmBase = createLLMFromEnv({ openAiUseResponsesApi: mcp.needsResponsesApi });
+  // 若存在 Remote MCP 定义且底层支持 bindTools，则绑定
+  const llm = (typeof (llmBase as any).bindTools === 'function' && mcp.remoteDefs.length > 0)
+    ? (llmBase as any).bindTools(mcp.remoteDefs)
+    : llmBase;
+
+  // 最小实现：仅将本地（stdio/http-本地）工具注入；Remote MCP 由 OpenAI 托管
+  const tools = [calculatorTool, ...mcp.localTools];
+
+  cachedAgent = createReactAgent({ llm, tools, prompt: systemPrompt });
   return cachedAgent as ReactAgent;
 }
 

@@ -73,7 +73,7 @@ export class McpSessionManager extends EventEmitter {
       id: spec.id,
       client,
       start: async () => {
-        if (spec.transport.kind === 'http') {
+        if (spec.transport.type === 'http') {
           try {
             const http = new StreamableHTTPClientTransport(new URL(spec.transport.url), {
               requestInit: spec.transport.headers ? { headers: spec.transport.headers } : undefined,
@@ -145,3 +145,4 @@ export class McpSessionManager extends EventEmitter {
     this.sessions.delete(id);
   }
 }
+

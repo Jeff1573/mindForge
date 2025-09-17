@@ -11,12 +11,12 @@ var envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GOOGLE_API_KEY: z.string().min(1, "GOOGLE_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
-  GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
-  QDRANT_URL: z.string().url("QDRANT_URL \u5FC5\u987B\u4E3A\u5408\u6CD5 URL").optional(),
-  QDRANT_API_KEY: z.string().optional(),
-  QDRANT_COLLECTION: z.string().default("docs"),
-  MCP_SERVER_URL: z.string().optional(),
-  MCP_API_KEY: z.string().optional()
+  GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional()
+  // QDRANT_URL: z.string().url('QDRANT_URL 必须为合法 URL').optional(),
+  // QDRANT_API_KEY: z.string().optional(),
+  // QDRANT_COLLECTION: z.string().default('docs'),
+  // MCP_SERVER_URL: z.string().optional(),
+  // MCP_API_KEY: z.string().optional()
 });
 var cachedEnv = null;
 function getEnv() {

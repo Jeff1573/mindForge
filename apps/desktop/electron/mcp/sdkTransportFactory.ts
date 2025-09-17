@@ -24,7 +24,7 @@ export type AnyTransport =
 
 // 用于在联合穷尽时得到可靠的编译期提示
 function assertNever(x: never): never {
-  throw new Error('不支持的 transport.kind: ' + String(x));
+  throw new Error('不支持的 transport.type: ' + String(x));
 }
 
 // 将部分可选的重连配置安全收敛为 SDK 期望的完整结构；
@@ -52,7 +52,7 @@ function toReconnectionOptions(
 
 /** 创建不带连接副作用的传输实例 */
 export function createSdkTransport(cfg: McpTransportConfig): AnyTransport {
-  if (cfg.kind === 'stdio') {
+  if (cfg.type === 'stdio') {
     return new StdioClientTransport({
       command: cfg.command,
       args: cfg.args,
@@ -61,7 +61,7 @@ export function createSdkTransport(cfg: McpTransportConfig): AnyTransport {
       stderr: cfg.stderr ?? 'inherit',
     });
   }
-  if (cfg.kind === 'http') {
+  if (cfg.type === 'http') {
     const opts: StreamableHTTPClientTransportOptions = {
       requestInit: cfg.headers ? { headers: cfg.headers } : undefined,
       reconnectionOptions: toReconnectionOptions(cfg.reconnection),
@@ -69,7 +69,7 @@ export function createSdkTransport(cfg: McpTransportConfig): AnyTransport {
     };
     return new StreamableHTTPClientTransport(new URL(cfg.url), opts);
   }
-  if (cfg.kind === 'sse') {
+  if (cfg.type === 'sse') {
     return new SSEClientTransport(new URL(cfg.url), {
       // 注：EventSourceInit 无 headers 字段；headers 放入 requestInit
       requestInit: cfg.headers ? { headers: cfg.headers } : undefined,
@@ -111,3 +111,4 @@ export async function connectWithHttpSseFallback(
   }
   throw new Error('HTTP→SSE 回退失败：未能建立连接');
 }
+
