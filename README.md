@@ -139,3 +139,28 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 ```
 git ls-files -z | git check-ignore -z --stdin | tr '\0' '\n' | git rm -r --cached -f --pathspec-from-file - --pathspec-file-nul
 ```
+
+## MCP 自检脚本（context7/serena）
+
+前置：
+- 构建主进程：`npm run build:electron --workspace=@mindforge/desktop`
+
+运行：
+- 最简：`npm run smoke:mcp --workspace=@mindforge/desktop`（默认仅测试 `context7`，并跳过 Agent）
+- 常用参数：
+  - `--id <serverId>`：仅测某个 MCP（如 `context7`、`serena`）
+  - `--prompt <中文提示>`：Agent 端到端提示词
+  - `--skip-agent`：只做 MCP 直连（列工具 + context7 两个工具调用）
+  - `--debug`：打印详细日志
+  - `--config <path>`：指定 mcp.json（默认 `apps/desktop/mcp.json` 或 `MF_MCP_CONFIG`）
+  - `--query <q>`：context7 解析库名（默认 `vercel/next.js`）
+  - `--topic <t>`：context7 文档主题（默认 `routing`）
+  - `--tokens <n>`：context7 文档 token 上限（默认 800）
+  - `--inject`：将工具结果注入上下文并单轮调用 LLM（推荐开启）
+  - `--placement <system|user-prepend|user-append>`：上下文注入位置（默认 system）
+  - `--maxctx <n>`：注入上下文最大字符数（默认 3000）
+  - `--sys-prefix <text>`：自定义 system 前缀说明
+
+环境变量：
+- `AI_PROVIDER=gemini`（或 `openai` 等）；`AI_API_KEY`/`GEMINI_API_KEY`/`GOOGLE_API_KEY` 之一必需
+- `MF_MCP_CONFIG` 可覆盖 mcp.json 路径

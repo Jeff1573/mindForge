@@ -37,6 +37,9 @@ export type McpIntegrationResult = {
 export async function resolveMcpForLangChain(): Promise<McpIntegrationResult> {
   const env = getEnv();
   const cfg = loadMcpConfig();
+  // 允许通过环境变量过滤需要加载的 MCP（逗号分隔），用于 Agent-only 精简日志与依赖
+  const includeRaw = (process.env.MF_MCP_INCLUDE || '').trim();
+  const includeIds = includeRaw.length > 0 ? includeRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
 
   const isOpenAI = env.AI_PROVIDER === 'openai';
   const remoteDefs: RemoteMcpDef[] = [];
@@ -48,6 +51,9 @@ export async function resolveMcpForLangChain(): Promise<McpIntegrationResult> {
   const localEntries: LocalEntry[] = [];
 
   for (const c of cfg.clients) {
+    if (includeIds.length > 0 && !includeIds.includes(c.id)) {
+      continue; // 按过滤列表跳过无关 server
+    }
     const t: McpTransportConfig = c.transport;
     if (t.type === 'http') {
       if (isOpenAI) {

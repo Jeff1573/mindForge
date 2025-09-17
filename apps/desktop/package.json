@@ -41,10 +41,11 @@
     "check": "vite build --emptyOutDir",
     "start": "electron .",
     "build": "vite build && tsc -p tsconfig.electron.json",
-    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:electron": "tsc -p tsconfig.electron.json && node scripts/copy-prompts.cjs",
     "build:renderer": "vite build",
     "lint": "eslint .",
     "smoke:gemini": "npm run build:electron && node scripts/gemini-smoke.cjs",
+    "smoke:mcp": "npm run build:electron && node scripts/mcp-smoke.cjs --id context7 --agent-only --debug",
     "mcp:demo": "tsx electron/mcp/demo.ts",
     "check:mcp": "tsc -p tsconfig.mcp.json --noEmit"
   }

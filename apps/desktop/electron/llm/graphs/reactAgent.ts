@@ -58,7 +58,7 @@ function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageM
 export async function getReactAgent(): Promise<ReactAgent> {
   if (cachedAgent) return cachedAgent;
   const systemPrompt = await resolveAgentSystemPrompt();
-
+  console.log('systemPrompt', systemPrompt);
   // 依据 mcp.json 构建 MCP 集成（Remote MCP + 本地 stdio）
   const { ensureMcpRuntime } = await import('../mcp/runtime');
   const mcp = await ensureMcpRuntime();
