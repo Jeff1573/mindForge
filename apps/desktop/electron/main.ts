@@ -17,6 +17,7 @@ import { runLLMSmoke } from './llm/smoke';
 import { runReactAgent } from './llm/reactAgentRunner';
 import { runReactAgentSmoke } from './llm/reactAgentSmoke';
 import type { LLMMessage } from './llm/types';
+import { disposeMcpRuntime } from './llm/mcp/runtime';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
 let mainWindow: BrowserWindow | null = null;
@@ -79,6 +80,11 @@ async function createWindow() {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// 统一资源清理：在应用退出前释放 MCP Runtime（LangChain mcp-adapters 侧连接/子进程）
+app.on('before-quit', async () => {
+  try { await disposeMcpRuntime(); } catch { /* noop */ }
 });
 
 app.whenReady().then(async () => {

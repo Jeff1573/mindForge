@@ -6,7 +6,8 @@
 
 import { loadMcpConfig } from '../../mcp/config';
 import type { McpTransportConfig } from '../../mcp/config';
-import { getEnv } from '@mindforge/shared/env';
+// 注意：shared 包仅导出根路径，不导出子路径；请从根导入 getEnv
+import { getEnv } from '@mindforge/shared';
 import type { DynamicStructuredTool } from '@langchain/core/tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import type { Connection } from '@langchain/mcp-adapters';

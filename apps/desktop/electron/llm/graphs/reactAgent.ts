@@ -3,36 +3,8 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { LanguageModelLike } from '@langchain/core/language_models/base';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
-import { tool } from '@langchain/core/tools';
-import { z } from 'zod';
-import type { BaseMessageLike } from '@langchain/core/messages';
-
 import { loadRolePrompt } from '../../prompts/loader';
-const calculatorTool = tool(
-  async ({ expression }) => {
-    const trimmed = expression.trim();
-    if (!trimmed) throw new Error('expression 不能为空');
-    const sanitized = trimmed.replace(/[^0-9+\-*/().\s]/g, '');
-    if (sanitized !== trimmed) {
-      throw new Error('仅支持数字与 +-*/() 运算符');
-    }
-    const finalExpression = sanitized.trim();
-    if (!finalExpression) {
-      throw new Error('表达式无有效内容');
-    }
-    const result = Function('"use strict"; return (' + finalExpression + ')')() as number;
-    if (Number.isNaN(result) || !Number.isFinite(result)) {
-      throw new Error('表达式计算结果无效');
-    }
-    return result.toString();
-  },
-  {
-    name: 'calculator',
-    description: '执行基础算术表达式，支持加减乘除与括号。',
-    // 避免 TS 深层类型实例化导致的推断开销，显式放宽 schema 类型
-    schema: z.object({ expression: z.string() })
-  }
-);
+import type { BaseMessageLike } from '@langchain/core/messages';
 
 type ReactAgent = ReturnType<typeof createReactAgent>;
 let cachedAgent: ReactAgent | null = null;
@@ -88,8 +60,8 @@ export async function getReactAgent(): Promise<ReactAgent> {
   const systemPrompt = await resolveAgentSystemPrompt();
 
   // 依据 mcp.json 构建 MCP 集成（Remote MCP + 本地 stdio）
-  const { resolveMcpForLangChain } = await import('../mcp/mcpIntegration');
-  const mcp = await resolveMcpForLangChain();
+  const { ensureMcpRuntime } = await import('../mcp/runtime');
+  const mcp = await ensureMcpRuntime();
 
   // OpenAI + Remote MCP 需要 useResponsesApi
   const llmBase = createLLMFromEnv({ openAiUseResponsesApi: mcp.needsResponsesApi });
@@ -99,9 +71,9 @@ export async function getReactAgent(): Promise<ReactAgent> {
     : llmBase;
 
   // 最小实现：仅将本地（stdio/http-本地）工具注入；Remote MCP 由 OpenAI 托管
-  const tools = [calculatorTool, ...mcp.localTools];
+  const tools: any[] = [...mcp.localTools];
 
-  cachedAgent = createReactAgent({ llm, tools, prompt: systemPrompt });
+  cachedAgent = createReactAgent({ llm: llm as any, tools: tools as any, prompt: systemPrompt }) as any;
   return cachedAgent as ReactAgent;
 }
 
@@ -120,3 +92,5 @@ export async function ensureAgentInput(messages: BaseMessageLike[]): Promise<Rea
 export async function getReactAgentSystemPrompt(): Promise<string> {
   return resolveAgentSystemPrompt();
 }
+
+
