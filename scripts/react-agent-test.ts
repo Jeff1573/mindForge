@@ -29,12 +29,12 @@ async function main() {
   try {
     const result = await runReactAgent(messages);
     console.log(`[react-agent-test] systemPromptExcerpt: ${result.systemPromptExcerpt}`);
-    console.log(`[react-agent-test] 最终回复：${result.content}`);
+    console.log(`[react-agent-test] 最终回复：${result.finalResult?.content ?? ''}`);
     if (result.steps.length) {
       console.log('[react-agent-test] 推理轨迹：');
       for (const step of result.steps) {
         const toolInfo = step.toolCalls ? ` toolCalls=${JSON.stringify(step.toolCalls)}` : '';
-        console.log(`  - role=${step.role}${toolInfo} => ${step.content}`);
+        console.log(`  - #${step.index} ${step.summary}${toolInfo} => ${step.content}`);
       }
     }
   } catch (err) {
@@ -44,4 +44,3 @@ async function main() {
 }
 
 main();
-

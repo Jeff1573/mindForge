@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 // 类型仅用于声明，避免将主进程实现细节引入到预加载产物
 import type { LLMMessage } from './llm/types';
-import type { ReactAgentStep } from './llm/reactAgentRunner';
+import type { AgentLogBatchResult } from '@mindforge/shared';
 import type { SessionSpec } from './mcp/sessionManager';
 import type { McpInitializeResult } from './mcp/sdkClient';
 
@@ -78,11 +78,7 @@ const api = {
   // - 边界：当前仅一次性返回，不提供流式更新；长耗时由前端负责展示 loading。
   agent: {
     reactInvoke: (payload: { messages: LLMMessage[]; threadId?: string }) =>
-      ipcRenderer.invoke('agent:react:invoke', payload) as Promise<{
-        content: string;
-        steps: ReactAgentStep[];
-        systemPromptExcerpt: string;
-      }>,
+      ipcRenderer.invoke('agent:react:invoke', payload) as Promise<AgentLogBatchResult>,
   },
 };
 

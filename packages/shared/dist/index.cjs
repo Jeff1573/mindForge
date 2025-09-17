@@ -20,9 +20,12 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  AGENT_LOG_SCHEMA_VERSION: () => AGENT_LOG_SCHEMA_VERSION,
+  createStepId: () => createStepId,
   envSchema: () => envSchema,
   getEnv: () => getEnv,
   getPublicEnv: () => getPublicEnv,
+  isAgentLogBatchResult: () => isAgentLogBatchResult,
   logger: () => logger
 });
 module.exports = __toCommonJS(index_exports);
@@ -71,10 +74,24 @@ var logger = {
   warn: (...args) => console.warn("[warn]", ...args),
   error: (...args) => console.error("[error]", ...args)
 };
+
+// src/agentLog.ts
+var AGENT_LOG_SCHEMA_VERSION = 1;
+function createStepId(index, role) {
+  return `step-${index}-${role}-${Date.now()}`;
+}
+function isAgentLogBatchResult(x) {
+  if (!x || typeof x !== "object") return false;
+  const o = x;
+  return o.schemaVersion === AGENT_LOG_SCHEMA_VERSION && Array.isArray(o.steps);
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  AGENT_LOG_SCHEMA_VERSION,
+  createStepId,
   envSchema,
   getEnv,
   getPublicEnv,
+  isAgentLogBatchResult,
   logger
 });

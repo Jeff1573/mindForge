@@ -3,6 +3,13 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import type { LLMMessage } from "./types";
 import { ensureAgentInput, getReactAgent } from "./graphs/reactAgent";
 import { extractContentText } from "./utils/langchain";
+import {
+  AGENT_LOG_SCHEMA_VERSION,
+  type AgentLogBatchResult,
+  type AgentLogStep,
+  type AgentRole,
+  createStepId,
+} from "@mindforge/shared";
 
 export type ReactAgentRunOptions = {
   threadId?: string;
@@ -52,10 +59,16 @@ function toSerializableSteps(messages: BaseMessageLike[]): ReactAgentStep[] {
   });
 }
 
+/**
+ * 运行 ReAct Agent 并返回结构化日志（一次性）。
+ * - 输出遵循 shared 的 AgentLogBatchResult（schema v1）。
+ * - UI 可直接按 steps 进行折叠/展开渲染；
+ * - finalResult 独立用于 Markdown 完整展示。
+ */
 export async function runReactAgent(
   messages: LLMMessage[],
   options: ReactAgentRunOptions = {}
-): Promise<{ content: string; steps: ReactAgentStep[]; systemPromptExcerpt: string }> {
+): Promise<AgentLogBatchResult> {
   try {
     // 中文注释：获取共享实例的 ReAct Agent（内部已缓存，避免重复构建）。
     const agent = await getReactAgent();
@@ -66,7 +79,25 @@ export async function runReactAgent(
       : undefined;
     const output = await agent.invoke(input, config);
     const agentMessages = (output as { messages?: BaseMessageLike[] }).messages ?? [];
-    const steps = toSerializableSteps(agentMessages);
+    const rawSteps = toSerializableSteps(agentMessages);
+
+    // 将内部步骤映射为共享的 AgentLogStep 结构
+    const steps: AgentLogStep[] = rawSteps.map((s, idx) => {
+      const role = normalizeRole(s.role);
+      const id = createStepId(idx + 1, role);
+      const isTool = Boolean(s.toolCalls || s.toolCallId);
+      const summary = buildStepSummary(idx + 1, role, isTool);
+      return {
+        id,
+        index: idx + 1,
+        role,
+        summary,
+        content: s.content ?? "",
+        toolCalls: s.toolCalls,
+        toolCallId: s.toolCallId,
+        ts: Date.now(),
+      } satisfies AgentLogStep;
+    });
     const finalMessage = steps.at(-1);
     const content = finalMessage?.content ?? "";
 
@@ -75,9 +106,46 @@ export async function runReactAgent(
     const systemPrompt = await getReactAgentSystemPrompt();
     const systemPromptExcerpt = systemPrompt.length > 200 ? `${systemPrompt.slice(0, 200)}…` : systemPrompt;
 
-    return { content, steps, systemPromptExcerpt };
+    const result: AgentLogBatchResult = {
+      schemaVersion: AGENT_LOG_SCHEMA_VERSION,
+      steps,
+      finalResult: {
+        type: "final_result",
+        id: "final",
+        content,
+        format: "markdown",
+        ts: Date.now(),
+      },
+      systemPromptExcerpt,
+      // events 预留（当前按批量返回，不逐条推送）
+    };
+
+    return result;
   } catch (error) {
     console.error("[react-agent] 执行失败:", error);
     throw error;
   }
+}
+
+/** 将多源 role 归一为 AgentRole，未知归为 other。 */
+function normalizeRole(role: unknown): AgentRole {
+  if (typeof role !== "string") return "other";
+  switch (role) {
+    case "system":
+    case "user":
+    case "assistant":
+    case "tool":
+    case "tool_result":
+      return role;
+    default:
+      return "other";
+  }
+}
+
+/** 构建折叠大纲标题。 */
+function buildStepSummary(index: number, role: AgentRole, isTool: boolean): string {
+  const prefix = `step#${index}`;
+  const rolePart = `role=${role}`;
+  const toolPart = isTool ? " • tool" : "";
+  return `${prefix} ${rolePart}${toolPart}`;
 }

@@ -23,6 +23,9 @@ import {
   ExportOutlined,
 } from '@ant-design/icons';
 import Header from './layout/Header';
+import AgentLogOutline from './agent/AgentLogOutline';
+import FinalResultPanel from './agent/FinalResultPanel';
+import type { AgentFinalResultEvent, AgentLogStep } from '@mindforge/shared';
 
 // 注：此组件仅展示 UI。与 Electron 主进程的实际交互（选择目录、生成报告）
 // 需要你在 renderer 里通过 IPC 暴露方法，例如：window.api.selectDirectory() / window.api.generateReport(path)
@@ -43,6 +46,8 @@ export default function App() {
   const [agentPrompt, setAgentPrompt] = useState<string>('');
   const [agentLoading, setAgentLoading] = useState<boolean>(false);
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
+  const [agentSteps, setAgentSteps] = useState<AgentLogStep[]>([]);
+  const [agentFinal, setAgentFinal] = useState<AgentFinalResultEvent | undefined>(undefined);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -350,8 +355,11 @@ export default function App() {
                         ...prev,
                         `systemPromptExcerpt: ${res?.systemPromptExcerpt ?? ''}`,
                       ]);
-                      // 展示推理步骤（安全处理未知结构）
-                      const steps = Array.isArray(res?.steps) ? res.steps : [];
+                      // 存入结构化数据供大纲视图使用
+                      if (Array.isArray(res?.steps)) setAgentSteps(res.steps as any);
+                      setAgentFinal(res?.finalResult);
+                      // 展示推理步骤（兼容新旧结构）
+                      const steps: any[] = Array.isArray(res?.steps) ? res.steps : [];
                       for (let i = 0; i < steps.length; i++) {
                         const s: any = steps[i] ?? {};
                         const calls = (() => {
@@ -359,14 +367,16 @@ export default function App() {
                             return s?.toolCalls ? ` toolCalls=${JSON.stringify(s.toolCalls)}` : '';
                           } catch { return ' toolCalls=[Unserializable]'; }
                         })();
+                        const stepIdx = s?.index ?? (i + 1);
+                        const head = s?.summary ? `${s.summary}` : `step#${stepIdx} role=${s?.role ?? '?'}`;
                         setAgentLogs((prev) => [
                           ...prev,
-                          `step#${i + 1} role=${s?.role ?? '?'} => ${String(s?.content ?? '')}${calls}`,
+                          `${head} => ${String(s?.content ?? '')}${calls}`,
                         ]);
                       }
                       setAgentLogs((prev) => [
                         ...prev,
-                        `final: ${String(res?.content ?? '')}`,
+                        `final: ${String(res?.finalResult?.content ?? res?.content ?? '')}`,
                         '[完成]'
                       ]);
                     } catch (err) {
@@ -384,7 +394,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* 日志列表 */}
+            {/* 日志大纲（默认折叠） + 最终结果（Markdown） */}
+            <AgentLogOutline steps={agentSteps} defaultCollapsed />
+            <FinalResultPanel final={agentFinal} />
+
+            {/* 原始日志列表（调试用途） */}
             <div
               style={{
                 border: `1px solid ${token.colorBorder}`,

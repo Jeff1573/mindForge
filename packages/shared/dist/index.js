@@ -42,9 +42,23 @@ var logger = {
   warn: (...args) => console.warn("[warn]", ...args),
   error: (...args) => console.error("[error]", ...args)
 };
+
+// src/agentLog.ts
+var AGENT_LOG_SCHEMA_VERSION = 1;
+function createStepId(index, role) {
+  return `step-${index}-${role}-${Date.now()}`;
+}
+function isAgentLogBatchResult(x) {
+  if (!x || typeof x !== "object") return false;
+  const o = x;
+  return o.schemaVersion === AGENT_LOG_SCHEMA_VERSION && Array.isArray(o.steps);
+}
 export {
+  AGENT_LOG_SCHEMA_VERSION,
+  createStepId,
   envSchema,
   getEnv,
   getPublicEnv,
+  isAgentLogBatchResult,
   logger
 };

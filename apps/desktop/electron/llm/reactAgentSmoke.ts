@@ -22,12 +22,12 @@ export async function runReactAgentSmoke(opts: ReactAgentSmokeOptions = {}): Pro
   console.log(`[ReactAgentSmoke] prompt="${prompt}"`);
   try {
     const result = await runReactAgent(messages, { threadId: opts.threadId });
-    console.log(`[ReactAgentSmoke] 最终回复：${result.content}`);
-    if (result.steps.length) {
+    console.log(`[ReactAgentSmoke] 最终回复：${result.finalResult?.content ?? ''}`);
+    if (result.steps?.length) {
       console.log("[ReactAgentSmoke] 推理轨迹：");
-      for (const step of result.steps) {
+      for (const step of result.steps ?? []) {
         const toolInfo = step.toolCalls ? ` toolCalls=${JSON.stringify(step.toolCalls)}` : "";
-        console.log(`  - role=${step.role}${toolInfo} => ${step.content}`);
+        console.log(`  - #${step.index} ${step.summary} |${toolInfo} => ${step.content}`);
       }
     }
   } catch (error) {

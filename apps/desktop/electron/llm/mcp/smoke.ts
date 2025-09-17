@@ -330,9 +330,9 @@ export async function runMcpSmoke(options: McpSmokeOptions = {}): Promise<void> 
       const t3 = Date.now();
       const res = await runReactAgent(messages as any);
       // 渲染步骤（精简且高亮）
-      renderAgentSteps(res.steps);
+      renderAgentSteps(res.steps as any);
       // 最终回答
-      console.log(`\n\x1b[32m[AGENT][FINAL]\x1b[0m ${res.content || '[空白]'}`);
+      console.log(`\n\x1b[32m[AGENT][FINAL]\x1b[0m ${res.finalResult?.content || '[空白]'}`);
       console.log(`\x1b[2m[AGENT] system prompt 摘要：${res.systemPromptExcerpt}\x1b[0m`);
       console.log(`\x1b[2m[AGENT] elapsed=${Date.now() - t3}ms\x1b[0m`);
     } catch (err) {
@@ -351,7 +351,7 @@ export async function runMcpSmoke(options: McpSmokeOptions = {}): Promise<void> 
 export default { runMcpSmoke };
 
 // ========== 辅助：Agent 步骤渲染（带颜色） ==========
-import type { ReactAgentStep } from '../reactAgentRunner';
+import type { AgentLogStep } from '@mindforge/shared';
 
 function color(code: number, text: string) { return `\x1b[${code}m${text}\x1b[0m`; }
 const C = {
@@ -369,7 +369,7 @@ function truncate(text: string, n = 800) {
   return text.length > n ? `${text.slice(0, n)}…` : text;
 }
 
-function renderAgentSteps(steps: ReactAgentStep[] = []) {
+function renderAgentSteps(steps: AgentLogStep[] = []) {
   for (const s of steps) {
     const role = (s.role || 'assistant').toLowerCase();
     // tool_calls 结构：OpenAI 风格一般为数组，Google 可能不同；尽量宽松处理
