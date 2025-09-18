@@ -10,6 +10,10 @@
 ## 环境变量
 复制根目录 `.env.example` 为 `.env` 并按需填写：
 - AI_PROVIDER（gemini/openai）、AI_MODEL、AI_API_KEY
+- OPENAI_*（仅当 AI_PROVIDER=openai 时生效）
+  - OPENAI_BASE_URL（可选，OpenAI/兼容服务 base URL，需包含 /v1；优先级：运行参数 baseURL > OPENAI_BASE_URL > AI_BASE_URL；为空则按默认 OpenAI）
+  - OPENAI_API_KEY（优先于 AI_API_KEY）
+  - OPENAI_MODEL（优先于 AI_MODEL）
 - QDRANT_URL、QDRANT_API_KEY、QDRANT_COLLECTION（默认 docs）
 - MCP_SERVER_URL、MCP_API_KEY（可选）
 
@@ -65,6 +69,36 @@ npm run dev --workspace=@mindforge/api
 npm run dev --workspace=@mindforge/desktop
 ```
 
+### OpenAI 配置连通性测试（兼容网关）
+
+- 用途：验证 `OPENAI_BASE_URL`（需包含 `/v1`）、`OPENAI_API_KEY`、`OPENAI_MODEL` 等是否被正确解析，并能连通兼容的 `/v1/chat/completions` 与 `/v1/models`。
+- 命令：
+
+```bash
+# 环境变量示例（请替换为你的实际值）
+AI_PROVIDER=openai \
+OPENAI_BASE_URL=https://your-proxy.example.com/v1 \
+OPENAI_API_KEY=sk-xxx \
+OPENAI_MODEL=gpt-4o-mini \
+npm run test:openai
+
+# 仅查看解析（不触网）
+npm run test:openai -- --dry-run --verbose
+
+# 仅测试 /v1/models
+npm run test:openai -- --models-only
+```
+
+- 判据：任一接口连通即视为“已生效并可用”。脚本会输出分类诊断（鉴权/网络/模型名/路由）。
+- 一致性：脚本内置桌面端 provider 解析规则（OPENAI_MODEL/OPENAI_API_KEY/OPENAI_BASE_URL 的优先级）一致性检查，发现差异会提示修复建议。
+
+### 桌面端 Provider 选择规则
+
+- 仅当 `AI_PROVIDER=openai` 时，读取 `OPENAI_*` 并支持自定义 `baseURL`；否则忽略 `OPENAI_*`。
+- 当 `AI_PROVIDER` 为 `gemini` 或 `google` 时，仅使用 `AI_API_KEY` 和 `AI_MODEL` 构建 Gemini 模型（不再读取 `GOOGLE_API_KEY/GEMINI_API_KEY`）。
+- 其他 provider 暂未内建（按需扩展）。
+- 调试：设置 `LLM_DEBUG=1` 可在初始化时输出一次脱敏摘要（provider/model/baseURL/key）。
+
 ### Agent 执行日志（结构化大纲 + Final Result）
 
 - 在应用界面「Agent 测试（调用 agent:react:invoke）」卡片中输入一段提示并点击“执行”。
@@ -108,4 +142,3 @@ localStorage.setItem('mf.agentLogOutline.enabled', '0')
 
 ## MCP 使用（简述）
 - 详见 `apps/desktop/electron/mcp/README.md` 与 `apps/desktop/mcp.json`。
-

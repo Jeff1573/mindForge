@@ -16,15 +16,18 @@ type OpenAIClientInit = {
 
 type OpenAICallOptions = LLMCallOptions;
 
-const DEFAULT_MODEL = 'gpt-4o-mini';
+// 中文注释：按需求设定 OpenAI 默认模型
+const DEFAULT_MODEL = 'gpt-40-mini';
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_MAX_RETRIES = 2;
 
 export async function createOpenAIClient(init: OpenAIClientInit = {}): Promise<LLMClient> {
   const env = getEnv();
-  const model = init.model ?? env.AI_MODEL ?? DEFAULT_MODEL;
-  const apiKey = init.apiKey ?? env.AI_API_KEY ?? env.OPENAI_API_KEY;
-  const baseURL = init.baseURL ?? env.AI_BASE_URL;
+  // 中文注释：在 openai provider 下，运行参数 > OPENAI_* > AI_*
+  const model = init.model ?? env.OPENAI_MODEL ?? env.AI_MODEL ?? DEFAULT_MODEL;
+  const apiKey = init.apiKey ?? env.OPENAI_API_KEY ?? env.AI_API_KEY;
+  // 基于优先级解析 baseURL：运行参数 > OPENAI_BASE_URL > AI_BASE_URL
+  const baseURL = (init.baseURL ?? env.OPENAI_BASE_URL ?? env.AI_BASE_URL)?.trim();
   const defaultTemperature = init.temperature ?? DEFAULT_TEMPERATURE;
   const defaultMaxTokens = init.maxTokens;
   const maxRetries = init.maxRetries ?? DEFAULT_MAX_RETRIES;

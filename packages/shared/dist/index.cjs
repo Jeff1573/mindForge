@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
@@ -31,15 +41,41 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/env.ts
-var import_config = require("dotenv/config");
+var import_node_fs = __toESM(require("fs"), 1);
+var import_node_path = __toESM(require("path"), 1);
+var import_dotenv = __toESM(require("dotenv"), 1);
 var import_zod = require("zod");
+function loadNearestDotenv() {
+  const specified = process.env.DOTENV_CONFIG_PATH?.trim();
+  if (specified && import_node_fs.default.existsSync(specified)) {
+    import_dotenv.default.config({ path: specified });
+    return;
+  }
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i++) {
+    const candidate = import_node_path.default.join(dir, ".env");
+    if (import_node_fs.default.existsSync(candidate)) {
+      import_dotenv.default.config({ path: candidate });
+      return;
+    }
+    const parent = import_node_path.default.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+}
+loadNearestDotenv();
 var envSchema = import_zod.z.object({
   NODE_ENV: import_zod.z.enum(["development", "test", "production"]).default("development"),
   AI_PROVIDER: import_zod.z.enum(["gemini", "google", "openai", "anthropic", "groq"]).default("gemini"),
   AI_MODEL: import_zod.z.string().min(1, "AI_MODEL \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   AI_API_KEY: import_zod.z.string().min(1, "AI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   AI_BASE_URL: import_zod.z.string().url("AI_BASE_URL \u5FC5\u987B\u4E3A\u5408\u6CD5 URL").optional(),
+  // 新增：仅用于 OpenAI/兼容 OpenAI Responses API 的 baseURL；
+  // 优先级（在 OpenAI 分支中）：init.baseURL > OPENAI_BASE_URL > AI_BASE_URL
+  OPENAI_BASE_URL: import_zod.z.string().url("OPENAI_BASE_URL \u5FC5\u987B\u4E3A\u5408\u6CD5 URL").optional(),
   OPENAI_API_KEY: import_zod.z.string().min(1, "OPENAI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
+  // 新增：OpenAI 专属模型名（在 openai 分支下优先于 AI_MODEL）
+  OPENAI_MODEL: import_zod.z.string().min(1, "OPENAI_MODEL \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   ANTHROPIC_API_KEY: import_zod.z.string().min(1, "ANTHROPIC_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GOOGLE_API_KEY: import_zod.z.string().min(1, "GOOGLE_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GEMINI_API_KEY: import_zod.z.string().min(1, "GEMINI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),

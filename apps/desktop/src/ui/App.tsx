@@ -8,10 +8,11 @@ import {
   Input,
   Button,
   Divider,
-  Progress,
   List,
   theme,
   ConfigProvider,
+  message,
+  Modal,
 } from 'antd';
 import { Switch } from 'antd';
 import {
@@ -22,6 +23,7 @@ import {
   LoadingOutlined,
   CopyOutlined,
   ExportOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import Header from './layout/Header';
 import AgentLogOutline from './agent/AgentLogOutline';
@@ -35,10 +37,7 @@ import type { AgentFinalResultEvent, AgentLogStep } from '@mindforge/shared';
 export default function App() {
   // 基础状态：与原实现一致，仅替换 UI 呈现
   const [projectPath, setProjectPath] = useState<string>("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [reportPath, setReportPath] = useState<string>("");
-  const [log, setLog] = useState<string[]>([]);
 
   // ========== Agent 最小可行测试界面状态 ==========
   // 为何：用于最小化验证主进程 IPC `agent:react:invoke`。
@@ -50,6 +49,8 @@ export default function App() {
   const [agentSteps, setAgentSteps] = useState<AgentLogStep[]>([]);
   const [agentFinal, setAgentFinal] = useState<AgentFinalResultEvent | undefined>(undefined);
   const [outlineEnabled, setOutlineEnabled] = useState<boolean>(true);
+  // 当前运行的 runId（用于取消与事件过滤）
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,40 +112,97 @@ export default function App() {
   };
 
   const handleGenerate = async () => {
-    if (!projectPath || isGenerating) return;
-    setIsGenerating(true);
-    setReportPath("");
-    setProgress(0);
-    setLog(["开始生成报告…"]);
-
-    // 如果你有真实后端逻辑，可以替换为 IPC 调用：
-    // const out = await window.api.generateReport(projectPath)
-    // setReportPath(out.path)
-
-    // 预览里做个假进度
-    const steps = [
-      "解析项目结构",
-      "索引与检索代码",
-      "分析潜在风险点",
-      "汇总并生成报告",
-    ];
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise((r) => setTimeout(r, 600));
-      setProgress(Math.round(((i + 1) / steps.length) * 100));
-      setLog((prev) => [...prev, steps[i]]);
+    if (!projectPath || agentLoading) return;
+    if (!(window as any)?.api?.agent?.reactStart) {
+      message.error('当前环境不支持 Agent 调用，请在 Electron 应用内使用');
+      return;
     }
+    // 构造用户提示词（按需求指定格式）
+    const prompt = `使用Serena MCP 工具分析该项目${projectPath}的内容，并且生成基于该项目的内容大纲，返回markdown文本.`;
+    setReportPath("");
+    setAgentLoading(true);
+    setAgentLogs(["[开始] 提交至主进程 agent:react:start…"]);
+    setAgentSteps([]);
+    setAgentFinal(undefined);
+    let offStep: undefined | (() => void);
+    let offFinal: undefined | (() => void);
+    let offError: undefined | (() => void);
+    try {
+      const payload = { messages: [{ role: 'user', content: prompt }] } as const;
+      const { runId } = await (window as any).api.agent.reactStart(payload as any);
+      setCurrentRunId(runId);
+      offStep = (window as any).api.agent.onReactStep(({ runId: rid, step }: any) => {
+        if (rid !== runId) return; // 过滤其他运行的事件
+        setAgentSteps((prev) => [...prev, step as any]);
+        const head = step?.summary ?? `step#${String(step?.index ?? '?')} role=${String(step?.role ?? '?')}`;
+        const calls = (() => { try { return step?.toolCalls ? ` toolCalls=${JSON.stringify(step.toolCalls)}` : ''; } catch { return ' toolCalls=[Unserializable]'; }})();
+        setAgentLogs((prev) => [...prev, `${head} => ${String(step?.content ?? '')}${calls}`]);
+      });
+      offFinal = (window as any).api.agent.onReactFinal(async ({ runId: rid, result }: any) => {
+        if (rid !== runId) return; // 过滤其他运行
+        const final = result?.finalResult as AgentFinalResultEvent | undefined;
+        setAgentFinal(final as any);
+        setAgentLogs((prev) => [...prev, `systemPromptExcerpt: ${result?.systemPromptExcerpt ?? ''}`, '[完成]']);
+        // 保存 Markdown 到项目 reports/
+        try {
+          if (final?.content && (window as any).api?.saveMarkdownReport) {
+            const saveRes = await (window as any).api.saveMarkdownReport(projectPath, final.content);
+            if (saveRes?.ok && saveRes.fullPath) {
+              setReportPath(saveRes.fullPath);
+              message.success('报告已创建');
+            } else {
+              message.warning(`报告未写入：${saveRes?.message ?? '未知原因'}`);
+            }
+          }
+        } catch (e) {
+          message.error(`保存失败：${(e as Error)?.message ?? String(e)}`);
+        }
+        setAgentLoading(false);
+        setCurrentRunId(null);
+        try { offStep?.(); offFinal?.(); offError?.(); } catch {}
+      });
+      offError = (window as any).api.agent.onReactError(({ runId: rid, message: msg }: any) => {
+        if (rid !== runId) return; // 过滤其他运行
+        setAgentLogs((prev) => [...prev, `错误：${String(msg)}`]);
+        message.error(String(msg));
+        setAgentLoading(false);
+        setCurrentRunId(null);
+        try { offStep?.(); offFinal?.(); offError?.(); } catch {}
+      });
+    } catch (err) {
+      setAgentLogs((prev) => [...prev, `错误：${(err as Error)?.message ?? String(err)}`]);
+      message.error((err as Error)?.message ?? String(err));
+      setAgentLoading(false);
+      setCurrentRunId(null);
+      try { offStep?.(); offFinal?.(); offError?.(); } catch {}
+    }
+  };
 
-    const fakePath = `${projectPath}/reports/security-report-${Date.now()}.md`;
-    setReportPath(fakePath);
-    setIsGenerating(false);
-    setLog((prev) => [...prev, "完成！"]);
+  // 终止当前运行：弹窗确认并通过 IPC 发起取消
+  const handleCancel = async () => {
+    if (!agentLoading || !currentRunId) return;
+    Modal.confirm({
+      title: '确认终止当前报告生成？',
+      content: '终止后将保留已产生的进度与产物，你可以稍后重新执行。',
+      okText: '终止',
+      okButtonProps: { danger: true, icon: <StopOutlined /> as any },
+      cancelText: '返回',
+      onOk: async () => {
+        try {
+          setAgentLogs((prev) => [...prev, `已请求终止（runId=${currentRunId}）…`]);
+          await (window as any).api?.agent?.reactCancel?.(currentRunId);
+        } catch (e) {
+          message.error(`终止失败：${(e as Error)?.message ?? String(e)}`);
+        }
+      },
+    });
   };
 
   const handleCopy = async () => {
     if (!reportPath) return;
     try {
       await navigator.clipboard.writeText(reportPath);
-      setLog((prev) => [...prev, "报告路径已复制到剪贴板"]);
+      message.success('路径已复制');
     } catch { /* noop */ }
   };
 
@@ -240,52 +298,67 @@ export default function App() {
 
             <Divider style={{ margin: '8px 0 0' }} />
 
-            {/* 生成报告区：保持原有假进度逻辑，仅替换为 antd 组件 */}
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography.Text type="secondary">输出格式：Markdown（.md）</Typography.Text>
-                <Button
-                  type="primary"
-                  icon={isGenerating ? <LoadingOutlined /> : <PlayCircleFilled />}
-                  loading={isGenerating}
-                  onClick={handleGenerate}
-                  disabled={!projectPath}
-                >
-                  {isGenerating ? '正在生成…' : '开始生成报告'}
-                </Button>
-              </div>
+            {/* ========== Agent 执行视图（新增：日志大纲 + 最终结果 + 原始日志） ========== */}
+            <div>
+              <Space size="small" align="center" style={{ marginBottom: 8 }}>
+                <PlayCircleFilled style={{ color: '#2563eb' }} />
+                <Typography.Text strong>Agent 执行</Typography.Text>
+                <div style={{ flex: 1 }} />
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>结构化视图</Typography.Text>
+                <Switch
+                  size="small"
+                  checked={outlineEnabled}
+                  onChange={(v) => {
+                    setOutlineEnabled(v);
+                    try { localStorage.setItem('mf.agentLogOutline.enabled', v ? '1' : '0'); } catch { /* noop */ }
+                  }}
+                />
+              </Space>
 
-              {/* 进度条区块：展示当前 percent，关键信息在 progress 状态 */}
+              {/* 日志大纲（默认折叠） + 最终结果（Markdown） */}
+              {outlineEnabled && <AgentLogOutline steps={agentSteps} defaultCollapsed />}
+              {outlineEnabled && <FinalResultPanel final={agentFinal} />}
+
+              {/* 原始日志列表（调试用途） */}
               <div
                 style={{
                   border: `1px solid ${token.colorBorder}`,
                   borderRadius: token.borderRadiusLG,
                   padding: 12,
+                  marginTop: 12,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: token.colorTextTertiary, marginBottom: 6 }}>
-                  <span>进度</span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress percent={progress} showInfo={false} />
-              </div>
-
-              {/* 日志区块：限制高度可滚动 */}
-              <div
-                style={{
-                  border: `1px solid ${token.colorBorder}`,
-                  borderRadius: token.borderRadiusLG,
-                  padding: 12,
-                }}
-              >
-                <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>过程日志</div>
-                <div style={{ maxHeight: 120, overflow: 'auto' }}>
+                <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>Agent 执行日志</div>
+                <div style={{ maxHeight: 240, overflow: 'auto' }}>
                   <List
                     size="small"
-                    dataSource={log}
+                    dataSource={agentLogs}
                     renderItem={(item) => <List.Item style={{ padding: '4px 0' }}>• {item}</List.Item>}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* 生成报告区：调用 Agent，最终返回时提示成功（无进度条） */}
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography.Text type="secondary">输出格式：Markdown（.md）</Typography.Text>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={agentLoading ? <LoadingOutlined /> : <PlayCircleFilled />}
+                    loading={agentLoading}
+                    onClick={handleGenerate}
+                    disabled={!projectPath || agentLoading}
+                  >
+                    {agentLoading ? '执行中…' : '开始生成报告'}
+                  </Button>
+                  {agentLoading && (
+                    <Button danger icon={<StopOutlined />} onClick={handleCancel}>
+                      终止
+                    </Button>
+                  )}
+                </Space>
               </div>
 
               {/* 结果卡片：成功提示 + 操作（复制 / 打开文件夹） */}
@@ -333,7 +406,8 @@ export default function App() {
         </Card>
 
         {/* ========== Agent 测试卡片（最小可行） ========== */}
-        <Card bodyStyle={{ padding: 24, marginTop: 16 }} className="security-card">
+        {/* 隐藏card */}
+        <Card bodyStyle={{ padding: 24, marginTop: 16 }} className="security-card" style={{ display: 'none' }}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <div>
               <Space size="small" align="center" style={{ marginBottom: 8 }}>

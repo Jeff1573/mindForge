@@ -9,7 +9,8 @@
     "smoke": "turbo run smoke --filter=@mindforge/api && turbo run check --filter=@mindforge/desktop",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:openai": "node scripts/test-openai-config.js"
   },
   "engines": {
     "node": ">=20.0.0"

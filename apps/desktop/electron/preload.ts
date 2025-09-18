@@ -26,6 +26,13 @@ const api = {
   // 在资源管理器/访达中展示某个文件或目录
   revealInFolder: async (fullPath: string) =>
     ipcRenderer.invoke('fs:revealInFolder', fullPath) as Promise<boolean>,
+  // 保存 Markdown 报告到项目 reports 目录
+  saveMarkdownReport: async (projectPath: string, content: string, fileName?: string) =>
+    ipcRenderer.invoke('fs:saveMarkdownReport', projectPath, content, fileName) as Promise<{
+      ok: boolean;
+      fullPath?: string;
+      message?: string;
+    }>,
 
   // ========== MCP（主进程桥） ==========
   mcp: {

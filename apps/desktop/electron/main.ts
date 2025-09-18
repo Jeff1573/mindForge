@@ -213,6 +213,30 @@ app.whenReady().then(async () => {
     }
   });
 
+  // 保存 Markdown 报告到项目 reports 目录
+  ipcMain.handle('fs:saveMarkdownReport', async (_e, projectPath: string, content: string, fileName?: string) => {
+    try {
+      if (!projectPath || typeof projectPath !== 'string') {
+        return { ok: false, message: '无效的项目目录路径' };
+      }
+      if (typeof content !== 'string' || content.length === 0) {
+        return { ok: false, message: '内容为空，未写入' };
+      }
+      const ts = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const tsName = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
+      const safeName = (fileName && /[^\\/:*?"<>|]/.test(fileName)) ? fileName : `project-outline-${tsName}.md`;
+      const reportsDir = path.join(projectPath, 'reports');
+      await fs.promises.mkdir(reportsDir, { recursive: true });
+      const fullPath = path.join(reportsDir, safeName);
+      await fs.promises.writeFile(fullPath, content, 'utf8');
+      return { ok: true, fullPath };
+    } catch (err) {
+      console.error('[fs:saveMarkdownReport] 失败:', err);
+      return { ok: false, message: String(err) };
+    }
+  });
+
   // ========== MCP 最小 IPC 接口 ==========
   // 说明：本期仅提供编程接口，不做 UI 配置对接
   ipcMain.handle('mcp/create', (_e, spec: SessionSpec) => {
@@ -322,12 +346,13 @@ app.whenReady().then(async () => {
     }
   });
 
-  // ========== Agent（流式日志） ==========
-  type AgentRunMap = Map<string, { active: boolean }>;
+  // ========== Agent（流式日志 + 取消） ==========
+  type AgentRunMap = Map<string, { active: boolean; controller: AbortController }>;
   const agentRuns: AgentRunMap = new Map();
   ipcMain.handle('agent:react:start', async (_e, payload: ReactAgentPayload) => {
     const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    agentRuns.set(runId, { active: true });
+    const ctrl = new AbortController();
+    agentRuns.set(runId, { active: true, controller: ctrl });
     // 后台启动，不阻塞
     void (async () => {
       try {
@@ -337,20 +362,24 @@ app.whenReady().then(async () => {
           },
           onFinal: (result) => {
             try { mainWindow?.webContents.send('agent:react:final', { runId, result }); } catch { /* noop */ }
-            agentRuns.set(runId, { active: false });
+            // 流结束（含正常、错误、取消后友好收尾）：清理运行态
+            agentRuns.delete(runId);
           },
           onError: (err) => {
             try { mainWindow?.webContents.send('agent:react:error', { runId, message: String(err) }); } catch { /* noop */ }
-            agentRuns.set(runId, { active: false });
+            // 发生错误：清理运行态
+            agentRuns.delete(runId);
           }
-        });
+        }, ctrl);
       } catch { /* 已经通过 onError 上报 */ }
     })();
     return { runId };
   });
   ipcMain.handle('agent:react:cancel', async (_e, runId: string) => {
-    // 目前无可取消句柄，先做幂等占位（未来接入 AbortController）
-    agentRuns.set(runId, { active: false });
+    const r = agentRuns.get(runId);
+    if (!r) return { ok: true };
+    try { r.controller.abort('user-cancel'); } catch { /* noop */ }
+    // 不立即删除映射，让流的 onFinal/onError 负责清理，避免竞态
     return { ok: true };
   });
 
