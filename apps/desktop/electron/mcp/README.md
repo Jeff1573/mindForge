@@ -30,6 +30,14 @@
 2. 环境变量 `MF_MCP_CONFIG` 指定的路径；
 3. 当前工作目录 `./mcp.json`。
 
+## 启动期自连接（Electron 主进程）
+
+- 自 v0.1.0 起，应用在 `app.whenReady()` 后后台并发读取 mcp.json 并尝试连接所有服务器：依次执行 `start → initialize`。
+- 超时策略：单个会话每一步 10s 超时（静默失败，不阻断应用与其它会话）。
+- 事件转发：`tools:listChanged/notification/log/error/close` 会被透传到当前窗口，供渲染端监听。
+- 清理：`before-quit` 钩子会迭代 `stop()` 所有自启动会话，并释放 LangChain 侧 MCP Runtime（幂等）。
+- 日志：开发模式（存在 `VITE_DEV_SERVER_URL`）下输出详细连接日志与超时原因；生产模式仅最小化日志。
+
 ## mcp.json 示例（唯一支持的格式）
 
 ```json

@@ -3,6 +3,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import type { LLMMessage } from "./types";
 import { ensureAgentInput, getReactAgent } from "./graphs/reactAgent";
 import { extractContentText } from "./utils/langchain";
+import { buildStepSummaryTitle } from "./utils/summary";
 import {
   AGENT_LOG_SCHEMA_VERSION,
   type AgentLogBatchResult,
@@ -85,8 +86,11 @@ export async function runReactAgent(
     const steps: AgentLogStep[] = rawSteps.map((s, idx) => {
       const role = normalizeRole(s.role);
       const id = createStepId(idx + 1, role);
-      const isTool = Boolean(s.toolCalls || s.toolCallId);
-      const summary = buildStepSummary(idx + 1, role, isTool);
+      const summary = buildStepSummary(idx + 1, role, {
+        content: s.content,
+        toolCalls: s.toolCalls,
+        toolCallId: s.toolCallId,
+      });
       return {
         id,
         index: idx + 1,
@@ -142,10 +146,11 @@ function normalizeRole(role: unknown): AgentRole {
   }
 }
 
-/** 构建折叠大纲标题。 */
-function buildStepSummary(index: number, role: AgentRole, isTool: boolean): string {
-  const prefix = `step#${index}`;
-  const rolePart = `role=${role}`;
-  const toolPart = isTool ? " • tool" : "";
-  return `${prefix} ${rolePart}${toolPart}`;
+// 构建更有信息量的步骤标题（为何：用于大纲视图的一句话概括；不含角色，保留 step#N）。
+function buildStepSummary(
+  index: number,
+  role: AgentRole,
+  s: { content?: unknown; toolCalls?: unknown; toolCallId?: unknown },
+): string {
+  return buildStepSummaryTitle(index, role, s.content ?? '', s.toolCalls, s.toolCallId, 50);
 }

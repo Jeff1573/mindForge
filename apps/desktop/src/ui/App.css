@@ -1,10 +1,32 @@
 /* App 页面专用样式（不使用 tailwind） */
-
+* {
+  box-sizing: border-box;
+}
+.root {
+  overflow: hidden;
+  height: 100vh;
+}
 .security-app {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* min-height: 100vh; */
+  height: 100%;
+  overflow: hidden;
   /* 顶部浅绿渐变到白色，贴近设计图 */
   background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(255, 255, 255, 1) 55%);
   background: radial-gradient(110% 65% at 16% 0%, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.08) 38%, rgba(255, 255, 255, 1) 70%);
+}
+
+.security-app-content {
+  flex: 1;
+  overflow: auto;
+  height: calc(100% - 2.75rem);
+}
+
+.security-content {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
 }
 
 .security-app-bg {

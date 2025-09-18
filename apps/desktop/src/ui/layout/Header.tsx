@@ -2,6 +2,7 @@ import React from 'react'
 import { Button, theme } from 'antd'
 import { Menu } from 'lucide-react'
 import { WindowControls } from '../system/WindowControls'
+import McpStatusIndicator from '../system/McpStatusIndicator'
 
 export default function Header() {
   // 使用 antd 主题 Token，使标题栏背景与 App 主题一致
@@ -27,10 +28,10 @@ export default function Header() {
       </div>
       <div className="mf-titlebar-spacer" />
       <div className="mf-titlebar-actions">
-        {/* <ThemeToggle /> */}
+        {/* 右侧状态指示：MCP 自启动连接结果（静默降级） */}
+        <McpStatusIndicator />
         <WindowControls />
       </div>
     </div>
   )
 }
-

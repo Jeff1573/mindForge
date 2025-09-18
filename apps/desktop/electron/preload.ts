@@ -79,6 +79,28 @@ const api = {
   agent: {
     reactInvoke: (payload: { messages: LLMMessage[]; threadId?: string }) =>
       ipcRenderer.invoke('agent:react:invoke', payload) as Promise<AgentLogBatchResult>,
+    // 流式：启动 + 事件订阅 + 取消
+    reactStart: (payload: { messages: LLMMessage[]; threadId?: string }) =>
+      ipcRenderer.invoke('agent:react:start', payload) as Promise<{ runId: string }>,
+    onReactStep: (cb: (p: { runId: string; step: any }) => void) => {
+      const ch = 'agent:react:step';
+      const h = (_: unknown, payload: { runId: string; step: any }) => cb(payload);
+      ipcRenderer.on(ch, h);
+      return () => ipcRenderer.removeListener(ch, h);
+    },
+    onReactFinal: (cb: (p: { runId: string; result: AgentLogBatchResult }) => void) => {
+      const ch = 'agent:react:final';
+      const h = (_: unknown, payload: { runId: string; result: AgentLogBatchResult }) => cb(payload);
+      ipcRenderer.on(ch, h);
+      return () => ipcRenderer.removeListener(ch, h);
+    },
+    onReactError: (cb: (p: { runId: string; message: string }) => void) => {
+      const ch = 'agent:react:error';
+      const h = (_: unknown, payload: { runId: string; message: string }) => cb(payload);
+      ipcRenderer.on(ch, h);
+      return () => ipcRenderer.removeListener(ch, h);
+    },
+    reactCancel: (runId: string) => ipcRenderer.invoke('agent:react:cancel', runId) as Promise<{ ok: true }>,
   },
 };
 

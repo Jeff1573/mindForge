@@ -159,7 +159,8 @@ export default function App() {
     >
     <div className="security-app">
       <Header />
-      {/* 顶部标题区：图标 + 文案 */}
+      <div className="security-app-content">
+        {/* 顶部标题区：图标 + 文案 */}
       <div className="security-wrap">
         <Space size="middle" align="center">
           <div
@@ -186,7 +187,7 @@ export default function App() {
       </div>
 
       {/* 主内容卡片 */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px 64px' }}>
+      <div className="security-content">
         <Card bodyStyle={{ padding: 24 }} className="security-card">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             {/* 选择目录 */}
@@ -366,47 +367,36 @@ export default function App() {
                   onClick={async () => {
                     if (!agentPrompt?.trim() || agentLoading) return;
                     setAgentLoading(true);
-                    setAgentLogs(["[开始] 提交至主进程 agent:react:invoke…"]);
+                    setAgentLogs(["[开始] 提交至主进程 agent:react:start…"]);
+                    setAgentSteps([]);
+                    setAgentFinal(undefined);
+                    let offStep: undefined | (() => void);
+                    let offFinal: undefined | (() => void);
+                    let offError: undefined | (() => void);
                     try {
-                      // 说明：最小消息结构，仅发送一条 user 消息
                       const payload = { messages: [{ role: 'user', content: agentPrompt.trim() }] } as const;
-                      const res = await window.api.agent.reactInvoke(payload as any);
-                      // 展示系统提示片段，便于确认角色设定
-                      setAgentLogs((prev) => [
-                        ...prev,
-                        `systemPromptExcerpt: ${res?.systemPromptExcerpt ?? ''}`,
-                      ]);
-                      // 存入结构化数据供大纲视图使用
-                      if (Array.isArray(res?.steps)) setAgentSteps(res.steps as any);
-                      setAgentFinal(res?.finalResult);
-                      // 展示推理步骤（兼容新旧结构）
-                      const steps: any[] = Array.isArray(res?.steps) ? res.steps : [];
-                      for (let i = 0; i < steps.length; i++) {
-                        const s: any = steps[i] ?? {};
-                        const calls = (() => {
-                          try {
-                            return s?.toolCalls ? ` toolCalls=${JSON.stringify(s.toolCalls)}` : '';
-                          } catch { return ' toolCalls=[Unserializable]'; }
-                        })();
-                        const stepIdx = s?.index ?? (i + 1);
-                        const head = s?.summary ? `${s.summary}` : `step#${stepIdx} role=${s?.role ?? '?'}`;
-                        setAgentLogs((prev) => [
-                          ...prev,
-                          `${head} => ${String(s?.content ?? '')}${calls}`,
-                        ]);
-                      }
-                      setAgentLogs((prev) => [
-                        ...prev,
-                        `final: ${String(res?.finalResult?.content ?? res?.content ?? '')}`,
-                        '[完成]'
-                      ]);
+                      const { runId } = await window.api.agent.reactStart(payload as any);
+                      offStep = window.api.agent.onReactStep(({ step }) => {
+                        setAgentSteps((prev) => [...prev, step as any]);
+                        const head = step?.summary ?? `step#${String(step?.index ?? '?')} role=${String(step?.role ?? '?')}`;
+                        const calls = (() => { try { return step?.toolCalls ? ` toolCalls=${JSON.stringify(step.toolCalls)}` : ''; } catch { return ' toolCalls=[Unserializable]'; }})();
+                        setAgentLogs((prev) => [...prev, `${head} => ${String(step?.content ?? '')}${calls}`]);
+                      });
+                      offFinal = window.api.agent.onReactFinal(({ result }) => {
+                        setAgentFinal(result?.finalResult as any);
+                        setAgentLogs((prev) => [...prev, `systemPromptExcerpt: ${result?.systemPromptExcerpt ?? ''}`, '[完成]']);
+                        setAgentLoading(false);
+                        try { offStep?.(); offFinal?.(); offError?.(); } catch {}
+                      });
+                      offError = window.api.agent.onReactError(({ message }) => {
+                        setAgentLogs((prev) => [...prev, `错误：${String(message)}`]);
+                        setAgentLoading(false);
+                        try { offStep?.(); offFinal?.(); offError?.(); } catch {}
+                      });
                     } catch (err) {
-                      setAgentLogs((prev) => [
-                        ...prev,
-                        `错误：${(err as Error)?.message ?? String(err)}`,
-                      ]);
-                    } finally {
+                      setAgentLogs((prev) => [...prev, `错误：${(err as Error)?.message ?? String(err)}`]);
                       setAgentLoading(false);
+                      try { offStep?.(); offFinal?.(); offError?.(); } catch {}
                     }
                   }}
                 >
@@ -443,6 +433,7 @@ export default function App() {
         <Typography.Paragraph className="security-footer-tip" type="secondary">
           {/* 提示：将选择目录与生成报告逻辑接入 */}
         </Typography.Paragraph>
+      </div>
       </div>
     </div>
     </ConfigProvider>

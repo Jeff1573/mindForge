@@ -26,6 +26,7 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
   }, [steps.length]);
 
   const parentRef = useRef<HTMLDivElement>(null);
+  const prevLenRef = useRef<number>(steps.length);
   const [tailing, setTailing] = useState(true);
 
   const virtualizer = useVirtualizer({
@@ -40,10 +41,13 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
   // 尾随滚动：仅在用户接近底部且 tailing=true 时触发
   useEffect(() => {
     const el = parentRef.current;
-    if (!el || !tailing) return;
+    if (!el || !tailing) { prevLenRef.current = steps.length; return; }
+    // 仅当“新增步骤”时才自动尾随，避免展开/折叠引起跳动
+    const appended = steps.length > prevLenRef.current;
+    prevLenRef.current = steps.length;
+    if (!appended) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
     if (nearBottom) {
-      // 滚动到最后一项
       virtualizer.scrollToIndex(Math.max(steps.length - 1, 0), { align: 'end' });
     }
   }, [steps.length, tailing, virtualizer]);
@@ -78,7 +82,20 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
           <Switch size="small" checked={tailing} onChange={(v) => setTailing(v)} />
         </Space>
       </div>
-      <div ref={parentRef} style={{ maxHeight: 320, overflow: 'auto', position: 'relative', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+      <div
+        ref={parentRef}
+        style={{
+          maxHeight: 320,
+          overflow: 'auto',
+          position: 'relative',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          // 防止浏览器滚动锚点导致的跳动
+          overflowAnchor: 'none' as any,
+          // 隔离绘制，减少重排影响
+          contain: 'layout paint',
+        }}
+      >
         <div style={{ height: totalSize, position: 'relative', width: '100%' }}>
           {items.map((vi) => {
             const s = steps[vi.index];
@@ -94,9 +111,11 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
                   left: 0,
                   width: '100%',
                   transform: `translateY(${vi.start}px)`,
+                  // 注意：不设置固定 height，交由实际内容高度 + measureElement 决定
                   padding: '8px 12px',
                   borderBottom: '1px solid #f0f0f0',
-                  background: isErrorStep(s) ? '#fff7f7' : 'transparent',
+                  background: isErrorStep(s) ? '#fff7f7' : '#fff',
+                  zIndex: open ? 1000 : 0,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
@@ -104,8 +123,15 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
                        const next = new Set(openSet);
                        if (next.has(s.id)) next.delete(s.id); else next.add(s.id);
                        setOpenSet(next);
-                       // 展开时尽快测量高度
-                       requestAnimationFrame(() => virtualizer.measure());
+                       // 用户交互时暂停尾随，避免跳动
+                       setTailing(false);
+                       // 展开时尽快测量高度并保留当前滚动位置
+                       const el = parentRef.current;
+                       const top = el?.scrollTop ?? 0;
+                       requestAnimationFrame(() => {
+                         virtualizer.measure();
+                         if (el) el.scrollTop = top;
+                       });
                      }}
                 >
                   <Typography.Text type="secondary">#{s.index}</Typography.Text>
@@ -113,7 +139,19 @@ export default function AgentLogOutline({ steps = [], defaultCollapsed = true }:
                   <Typography.Text>{s.summary}</Typography.Text>
                 </div>
                 {open && (
-                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 6 }}>
+                  <div
+                    style={{
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      marginTop: 6,
+                      // 展开内容区域固定高度并滚动
+                      maxHeight: 200,
+                      overflow: 'auto',
+                      paddingRight: 4,
+                      position: 'relative',
+                      zIndex: 3,
+                    }}
+                  >
                     {s.content}
                   </div>
                 )}

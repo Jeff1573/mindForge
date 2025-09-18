@@ -101,9 +101,12 @@ export class SdkMcpClient extends EventEmitter {
     };
   }
 
-  /** 列出工具（支持 cursor） */
+  /** 列出工具（支持 cursor）
+   * 兼容性说明：部分旧版/非标准实现对 params 缺省（undefined）会返回 -32602。
+   * 因此当未提供 cursor 时，始终传入空对象 {} 以满足服务端对对象类型的要求。
+   */
   async listTools(cursor?: string) {
-    const params = cursor ? { cursor } : undefined;
+    const params = cursor ? { cursor } : {};
     return await this.sdk.listTools(params);
   }
 
