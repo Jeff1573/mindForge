@@ -13,13 +13,20 @@
   "id": "architect",
   "name": "资深架构师",
   "description": "角色说明，可选",
-  "intro": "角色专属前置信息，可包含换行",
+  "intro_file": "roles/intros/architect.md", // 推荐：从 Markdown 文件加载 intro
+  // 兼容写法（可选）：
+  // "intro": "@file:roles/intros/architect.md" 或内联文本
   "fragments": ["context", "workflow", "constraints", "protocol"]
 }
 ```
 
-- `intro`：角色独有的开场指令，会作为 prompt 的第一部分。
+- `intro_file`：指向 PROMPT_ROOT 内的 Markdown 路径（相对路径），loader 优先从该文件读取 intro 内容。
+- `intro`：角色独有的开场指令；亦支持前缀 `@file:<relpath>` 的文件引用（作为回退）。
 - `fragments`：按顺序引用 `common/` 下的 Markdown 文件（无需扩展名），loader 会读取并依次拼接，段落之间使用空行分隔。
+
+安全与路径约束：
+- `intro_file` 与 `@file:` 引用会被限制在 prompts 根目录（PROMPT_ROOT）内，禁止绝对路径与 `..` 上跳；
+- 当引用文件缺失或为空时会报错（构建后 `check-prompts.cjs` 也会校验）。
 
 ## 在工厂中使用
 

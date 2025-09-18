@@ -13,7 +13,12 @@ export type RolePromptConfig = {
   id: string;
   name: string;
   description?: string;
+  // 角色开场指令：支持两种来源（二选一，intro_file 优先）：
+  // 1) intro_file：指向 PROMPT_ROOT 内的相对路径 Markdown 文件（推荐）
+  // 2) intro：内联文本；或使用前缀“@file:<relpath>”引用文件（向后兼容）
+  intro_file?: string;
   intro?: string;
+  // 需要拼接的公共片段（common/*.md）
   fragments?: string[];
 };
 
@@ -97,6 +102,45 @@ async function ensureFileExists(filePath: string): Promise<void> {
   }
 }
 
+// 安全判断：target 必须在 root 目录内，防止越权访问
+function assertInsideRoot(root: string, target: string): void {
+  const normalizedRoot = path.resolve(root) + path.sep;
+  const normalizedTarget = path.resolve(target);
+  if (!normalizedTarget.startsWith(normalizedRoot) && normalizedTarget !== normalizedRoot.slice(0, -1)) {
+    throw new Error(`尝试访问越权路径：${target}`);
+  }
+}
+
+// 解析 intro 内容：优先 intro_file；其次 intro 里的 @file:；最后内联文本
+async function resolveIntroContent(config: RolePromptConfig): Promise<string | undefined> {
+  // 文件读取助手（限制在 PROMPT_ROOT 内）
+  const readFromFile = async (relPath: string): Promise<string> => {
+    const cleanRel = String(relPath).trim().replace(/^\/+/, '');
+    const abs = path.resolve(PROMPT_ROOT, cleanRel);
+    assertInsideRoot(PROMPT_ROOT, abs);
+    await ensureFileExists(abs);
+    const content = (await fsp.readFile(abs, 'utf8')).trim();
+    if (!content) throw new Error(`intro 文件为空：${abs}`);
+    return content;
+  };
+
+  if (config.intro_file && String(config.intro_file).trim()) {
+    return readFromFile(String(config.intro_file));
+  }
+
+  if (config.intro) {
+    const raw = String(config.intro).trim();
+    const m = raw.match(/^@file\s*:\s*(.+)$/i);
+    if (m) {
+      const rel = m[1].trim();
+      if (!rel) throw new Error('intro 的 @file: 路径为空');
+      return readFromFile(rel);
+    }
+    return raw || undefined;
+  }
+  return undefined;
+}
+
 async function resolveRoleConfig(roleId: string): Promise<{ config: RolePromptConfig; filePath: string }> {
   const directPath = path.join(ROLES_DIR, `${roleId}.json`);
   try {
@@ -133,7 +177,9 @@ export async function loadRolePrompt(role?: string): Promise<RolePromptPayload> 
   const fragments = config.fragments ?? [];
 
   const parts: string[] = [];
-  if (config.intro) parts.push(config.intro.trim());
+  // 读取 intro（文件优先，其次内联/引用）
+  const intro = await resolveIntroContent(config);
+  if (intro) parts.push(intro);
 
   for (const fragmentId of fragments) {
     const fragmentContent = await loadFragment(fragmentId);
@@ -162,5 +208,4 @@ export async function loadRolePrompt(role?: string): Promise<RolePromptPayload> 
 export function clearRolePromptCache(): void {
   promptCache.clear();
 }
-
 

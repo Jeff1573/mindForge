@@ -46,6 +46,7 @@
     "build:electron": "tsc -p tsconfig.electron.json && node scripts/copy-prompts.cjs",
     "build:renderer": "vite build",
     "lint": "eslint .",
+    "prompt:print": "node scripts/print-prompt.cjs",
     
     "mcp:demo": "tsx electron/mcp/demo.ts",
     "check:mcp": "tsc -p tsconfig.mcp.json --noEmit"

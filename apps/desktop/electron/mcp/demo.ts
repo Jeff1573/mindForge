@@ -62,51 +62,42 @@ async function main() {
     return;
   }
 
-  const results: Array<{ id: string; ok: boolean }> = [];
+  // 汇总结果：仅最终输出机器可读 JSON（stdout）
+  const outputs: Array<{ id: string; status: 'ok' | 'fail'; tools: string[] }> = [];
 
   for (const h of targets) {
-    console.log(`\n=== [${h.id}] connecting...`);
+    const toolNames = new Set<string>();
     try {
       await h.start();
-      console.log(`[${h.id}] transport started.`);
-      const init = await h.initialize();
-      const protocol = safeGet<string | undefined>(init.protocolVersion, undefined);
-      const serverInfo = safeGet(init.serverInfo, { name: 'unknown', version: 'unknown' });
-      console.log(
-        `[${h.id}] initialized. server=name=${serverInfo.name}, version=${serverInfo.version}` +
-          (protocol ? `, protocol=${protocol}` : ''),
-      );
+      await h.initialize();
 
-      // 尝试分页列出 tools
+      // 分页收集工具名称（仅 name）
       let cursor: string | undefined = undefined;
-      let total = 0;
       do {
         const respUnknown: unknown = await h.client.listTools(cursor);
         const resp: ListToolsResp = isListToolsResp(respUnknown) ? respUnknown : {};
         const tools = Array.isArray(resp.tools) ? resp.tools : [];
         for (const t of tools) {
-          // 名称兜底
-          const name = typeof t?.name === 'string' ? t.name : 'unknown';
-          const desc = typeof t?.description === 'string' ? t.description : '';
-          console.log(` - tool: ${name}${desc ? ` — ${desc}` : ''}`);
+          const name = typeof t?.name === 'string' ? t.name : undefined;
+          if (name && name.length > 0) toolNames.add(name);
         }
-        total += tools.length;
         cursor = typeof resp.nextCursor === 'string' && resp.nextCursor.length > 0 ? resp.nextCursor : undefined;
       } while (cursor);
-      console.log(`[${h.id}] tools total=${total}`);
 
-      results.push({ id: h.id, ok: true });
+      outputs.push({ id: h.id, status: 'ok', tools: Array.from(toolNames) });
     } catch (err) {
+      // 仅记录失败，不在过程中输出描述/日志到 stdout
       console.error(`[${h.id}] 连接失败: ${String((err as Error)?.message ?? err)}`);
-      results.push({ id: h.id, ok: false });
+      outputs.push({ id: h.id, status: 'fail', tools: [] });
     } finally {
       try { await h.stop(); } catch { /* noop */ }
     }
   }
 
-  const summary = results.map((r) => `${r.id}:${r.ok ? 'ok' : 'fail'}`).join(', ');
-  console.log(`\nSummary: ${summary}`);
-  if (results.every((r) => !r.ok)) process.exitCode = 2;
+  // 最终一次性输出 JSON（仅包含 server、状态、tools 名称）
+  // 说明：保留退出码语义——若全部失败，exitCode=2，否则为 0
+  console.log(JSON.stringify(outputs, null, 2));
+  if (outputs.length > 0 && outputs.every((r) => r.status === 'fail')) process.exitCode = 2;
 }
 
 main().catch((e) => {

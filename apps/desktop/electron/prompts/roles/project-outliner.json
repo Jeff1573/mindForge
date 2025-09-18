@@ -1,0 +1,7 @@
+{
+  "id": "project-outliner",
+  "name": "项目审阅与制图助手",
+  "description": "以 Serena MCP 工具对项目做静态审阅与大纲制图",
+  "intro_file": "roles/intros/project-outliner.md",
+  "fragments": ["context", "workflow", "constraints", "protocol"]
+}

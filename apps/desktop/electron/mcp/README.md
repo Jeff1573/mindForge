@@ -38,6 +38,18 @@
 - 清理：`before-quit` 钩子会迭代 `stop()` 所有自启动会话，并释放 LangChain 侧 MCP Runtime（幂等）。
 - 日志：开发模式（存在 `VITE_DEV_SERVER_URL`）下输出详细连接日志与超时原因；生产模式仅最小化日志。
 
+### 启动日志（JSON）
+
+Electron 主进程在每个会话 `start/initialize` 完成后会向 stdout 打印一行 JSON，总结该会话的启动状态：
+
+```
+{ "server": "<serverName|id>", "success": true|false, "tools": ["name1", "name2", "..."] }
+```
+
+- `server`：优先使用握手返回的 `serverInfo.name`，不可用时回退为 `mcp.json` 的 `id`。
+- `success`：任一阶段失败则为 `false`；仅在 `initialize` 成功后输出 `true`。
+- `tools`：仅工具名称数组；启用分页与上限保护（最多 20 页/1000 项）。
+
 ## mcp.json 示例（唯一支持的格式）
 
 ```json

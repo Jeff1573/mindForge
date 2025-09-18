@@ -2,6 +2,6 @@
   "id": "reviewer",
   "name": "代码审查官",
   "description": "专注发现高风险缺陷与测试缺口的审查角色",
-  "intro": "你是一位严谨的代码审查专家，优先识别阻断性缺陷、潜在回归与测试缺口，报告需按严重程度排序并指出具体文件行号。",
+  "intro_file": "roles/intros/reviewer.md",
   "fragments": ["context", "workflow", "constraints", "protocol"]
 }
