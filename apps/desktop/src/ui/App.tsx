@@ -13,6 +13,7 @@ import {
   theme,
   ConfigProvider,
 } from 'antd';
+import { Switch } from 'antd';
 import {
   FolderOpenOutlined,
   FileDoneOutlined,
@@ -48,6 +49,7 @@ export default function App() {
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
   const [agentSteps, setAgentSteps] = useState<AgentLogStep[]>([]);
   const [agentFinal, setAgentFinal] = useState<AgentFinalResultEvent | undefined>(undefined);
+  const [outlineEnabled, setOutlineEnabled] = useState<boolean>(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +61,15 @@ export default function App() {
     try {
       const cached = localStorage.getItem('mf.selectedDirectoryPath');
       if (cached) setProjectPath(cached);
+    } catch { /* noop */ }
+  }, []);
+
+  // 实验性灰度开关：结构化日志视图开关（默认开启）
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('mf.agentLogOutline.enabled');
+      if (v === '0' || v === 'false') setOutlineEnabled(false);
+      else setOutlineEnabled(true);
     } catch { /* noop */ }
   }, []);
 
@@ -327,6 +338,16 @@ export default function App() {
               <Space size="small" align="center" style={{ marginBottom: 8 }}>
                 <PlayCircleFilled style={{ color: '#2563eb' }} />
                 <Typography.Text strong>Agent 测试（调用 agent:react:invoke）</Typography.Text>
+                <div style={{ flex: 1 }} />
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>结构化视图</Typography.Text>
+                <Switch
+                  size="small"
+                  checked={outlineEnabled}
+                  onChange={(v) => {
+                    setOutlineEnabled(v);
+                    try { localStorage.setItem('mf.agentLogOutline.enabled', v ? '1' : '0'); } catch { /* noop */ }
+                  }}
+                />
               </Space>
               <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
                 输入一段提示词，点击“执行”后在下方查看 Agent 的执行步骤与最终回复。
@@ -395,8 +416,8 @@ export default function App() {
             </div>
 
             {/* 日志大纲（默认折叠） + 最终结果（Markdown） */}
-            <AgentLogOutline steps={agentSteps} defaultCollapsed />
-            <FinalResultPanel final={agentFinal} />
+            {outlineEnabled && <AgentLogOutline steps={agentSteps} defaultCollapsed />}
+            {outlineEnabled && <FinalResultPanel final={agentFinal} />}
 
             {/* 原始日志列表（调试用途） */}
             <div

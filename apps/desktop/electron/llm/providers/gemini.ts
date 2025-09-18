@@ -98,7 +98,4 @@ export async function streamText(
  * Smoke：在控制台验证一次流式生成（仅主进程内部调用）。
  * 受环境变量 `LLM_SMOKE=1` 控制是否执行。
  */
-export async function runGeminiSmoke() {
-  const mod = (await dynamicImport('../smoke')) as typeof import('../smoke');
-  await mod.runLLMSmoke({ provider: 'gemini', force: true });
-}
+// 已移除 runGeminiSmoke（清理临时自检逻辑）

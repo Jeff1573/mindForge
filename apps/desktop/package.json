@@ -21,6 +21,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-markdown": "^9.0.3",
+    "@tanstack/react-virtual": "^3.10.8",
     "react-router-dom": "^6",
     "zod": "^3.25.76"
   },
@@ -45,8 +46,7 @@
     "build:electron": "tsc -p tsconfig.electron.json && node scripts/copy-prompts.cjs",
     "build:renderer": "vite build",
     "lint": "eslint .",
-    "smoke:gemini": "npm run build:electron && node scripts/gemini-smoke.cjs",
-    "smoke:mcp": "npm run build:electron && node scripts/mcp-smoke.cjs --id context7 --agent-only --debug",
+    
     "mcp:demo": "tsx electron/mcp/demo.ts",
     "check:mcp": "tsc -p tsconfig.mcp.json --noEmit"
   }

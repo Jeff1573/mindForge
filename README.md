@@ -1,22 +1,17 @@
 # MindForge Monorepo
 
-> 桌面端（Electron + Vite + React + Tailwind + shadcn/ui）与后端（Fastify），含 packages：shared / ui / mcp-server。
+> 桌面端（Electron + Vite + React）与后端（Fastify），含 packages：shared / ui / mcp-server。
 
 ## 先决条件
 - Node.js ≥ 20（建议启用 Corepack）
 - npm（Node.js 内置）
-- Rust 工具链（Windows 需 MSVC）
-
-可执行脚本检测/安装 Rust：
-```
-pwsh scripts/check-rust.ps1 -InstallIfMissing
-```
+- 可选：如需构建 `crates/indexer`，请安装 Rust（稳定版）并使用 `cargo build`
 
 ## 环境变量
 复制根目录 `.env.example` 为 `.env` 并按需填写：
 - AI_PROVIDER（gemini/openai）、AI_MODEL、AI_API_KEY
 - QDRANT_URL、QDRANT_API_KEY、QDRANT_COLLECTION（默认 docs）
-- MCP_SERVER_URL、MCP_API_KEY
+- MCP_SERVER_URL、MCP_API_KEY（可选）
 
 ## 安装依赖
 ```
@@ -27,30 +22,17 @@ npm install
 
 > 所有命令均在仓库根目录执行。使用 `-w|--workspace <name>` 指定目标工作区。
 
-常用场景：
+常用命令示例：
 
 ```bash
 # 安装到 Desktop（生产依赖）
 npm i <pkg> -w @mindforge/desktop
 
-# 安装到 Desktop（开发依赖/仅构建或类型用）
+# 安装到 Desktop（开发依赖）
 npm i -D <pkg> -w @mindforge/desktop
 
 # 安装到 API（生产依赖）
 npm i <pkg> -w @mindforge/api
-
-# 同时安装到多个 workspace（可重复 -w）
-npm i <pkg> -w @mindforge/desktop -w @mindforge/api
-
-# 安装类型声明（如果库未内置类型）
-npm i -D @types/<pkg> -w @mindforge/desktop
-
-# 卸载依赖
-npm un <pkg> -w @mindforge/desktop
-
-# 添加 peer / optional 依赖（组件库常用）
-npm i <pkg> --save-peer -w @mindforge/ui
-npm i <pkg> --save-optional -w @mindforge/desktop
 
 # 引用本地包（workspace 协议）
 npm i @mindforge/ui@workspace:* -w @mindforge/desktop
@@ -66,8 +48,8 @@ npm exec -w @mindforge/desktop electron-rebuild
 ```
 
 注意事项：
-- 锁文件位于根目录，由 npm 统一管理；不需要在子包单独运行 `npm install`。
-- Desktop 主进程当前使用 CommonJS；若依赖为 ESM-only，可采用 `await import('<pkg>')` 动态导入。
+- 根级执行 npm 命令统一管理依赖；如遇缺包，先执行一次 `npm install`
+- Desktop 主进程使用 CommonJS；若依赖为 ESM-only，可采用 `await import('<pkg>')` 动态导入
 
 ## 开发调试
 - 并行启动 API 与 Desktop：
@@ -83,46 +65,35 @@ npm run dev --workspace=@mindforge/api
 npm run dev --workspace=@mindforge/desktop
 ```
 
-API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境：`/env`。
+### Agent 执行日志（结构化大纲 + Final Result）
+
+- 在应用界面「Agent 测试（调用 agent:react:invoke）」卡片中输入一段提示并点击“执行”。
+- 运行结束后，在卡片下方可查看两部分：
+  - 步骤大纲：按步骤分组、默认折叠；异常步骤自动高亮并展开；支持“全部展开/折叠”“尾随”开关（接近底部时自动滚动）。
+  - 最终结果（Final Result）：按 Markdown 完整渲染，并提供“一键复制”。
+
+#### 实验性开关：结构化日志视图
+
+- 默认开启。可在卡片标题右侧的“结构化视图”开关控制显示；也可通过本地存储开关：
+
+```js
+// 开启（默认）
+localStorage.setItem('mf.agentLogOutline.enabled', '1')
+// 关闭
+localStorage.setItem('mf.agentLogOutline.enabled', '0')
+```
+
+- 关闭后仅保留原始行级文本日志（便于对比或排障）。
 
 ## 构建
 - 构建所有：`npm run build`
-- 构建 Desktop 前端与主进程（后续将补充安装包构建）：`npm run build --workspace=@mindforge/desktop`
-
-## Windows 打包图标配置（Electron 规划）
-- 图标源：`apps/desktop/assets/icon.svg`。
-- 后续使用 `electron-builder`，图标放置在 `apps/desktop/build/icons/`。
-
-## 样式体系约定（antd + 原生 CSS）
-
-- 设计令牌：仍使用 CSS 变量（HSL 数值）统一配色、圆角与边框：
-  - 浅色在 `:root`，深色在 `html[data-theme="dark"]` 中定义。
-  - 示例变量：`--color-bg/fg/primary/secondary/muted/border/ring`、`--radius-sm/md/lg`。
-- antd 主题：在 `AntdThemeProvider` 中启用 `cssVar: true`，并根据 `html[data-theme]` 切换 `light/dark` 算法；从现有 CSS 变量读取 `colorPrimary/colorBgBase/...` 注入 antd token，保持观感一致。
-- 语义组件层（纯 CSS）：优先使用语义类减少样式分散：
-  - 容器类：`.panel`（一般面板）、`.card`（卡片）、`.toolbar`（工具条）、`.surface-glass`（玻璃容器）。
-  - 标题栏/窗口：`.titlebar`、`.titlebar-surface`、`.window-btn`、`.window-btn--close`。
-  - 聊天：`.bubble-in/.bubble-out`（气泡）、`.bubble-tail-*`（尖角）、`.mf-*`（布局与响应语义类）。
-- 平台与增强：
-  - 平台标识：`data-platform` 变量（`--fx-blur/--panel-opacity/...`）保留。
-  - 容器查询：启用 `.cq .cq-name` 与 `@container` 调整布局。
-  - 滚动条：提供 Firefox/Chromium/WebKit 的近似样式与 `scrollbar-gutter: stable`。
-
-### 跨平台验收清单（手动）
-
-- 主题与对比度：浅/深色下文字与控件对比度满足可读（暗背景上主色按钮可辨）。
-- 平台标识：`data-platform` 在 Windows/macOS/Linux/移动端分别为期望值；Titlebar 高度随之变化。
-- 标题栏交互：拖拽区域有效；按钮区域 `no-drag` 保证可点击；macOS 左侧布局正确。
-- 模糊降级：在 Linux 或禁用 `backdrop-filter` 的环境无异常；启用时模糊强度符合平台预期。
-- 滚动条：样式接近设计；出现/隐藏滚动条时布局不抖动。
-- 容器查询：在支持容器查询的环境，聊天气泡宽度随容器变化；不支持时以断点回退。
-- 安全区：移动端顶部/底部/左右安全区内无内容被遮挡。
+- 构建 Desktop 前端与主进程：`npm run build --workspace=@mindforge/desktop`
 
 ## 工作区结构
-- apps/desktop：Electron + Vite + React + Tailwind + shadcn
+- apps/desktop：Electron + Vite + React
 - apps/api：Fastify + TypeScript
 - packages/shared：环境变量与通用工具
-- packages/ui：UI 组件库（shadcn 风格）
+- packages/ui：UI 组件
 - packages/mcp-server：MCP 服务骨架
 
 ## 版本基线（2025-09-10）
@@ -131,36 +102,10 @@ API 默认端口：`http://localhost:4000`，健康检查：`/health`，环境�
 ## Git 忽略策略（集中管理）
 - 根级 `.gitignore` 统一覆盖子包（Turborepo）。
 - 关键范围：`**/node_modules/`, `**/dist/`, `**/.turbo/`, `**/.vite/`, `**/.cache/`, `**/*.tsbuildinfo`。
-- Rust：仅忽略 `**/target/**` 与打包产物；保留 `Cargo.lock`。
-- 环境变量：忽略 `.env` 与 `.env.*`，保留 `.env.example`。
-- IDE/OS：忽略 `.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db` 等。
+- Rust（可选）补充：`**/target/**`；建议提交 `Cargo.lock`。
+- 环境文件：忽略 `.env` 与 `.env.*`，保留 `.env.example`。
+- IDE/OS：忽略 `.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db`。
 
-若历史已跟踪了被忽略的产物，可执行一次清理（仅从索引移除，不删工作区）：
-```
-git ls-files -z | git check-ignore -z --stdin | tr '\0' '\n' | git rm -r --cached -f --pathspec-from-file - --pathspec-file-nul
-```
+## MCP 使用（简述）
+- 详见 `apps/desktop/electron/mcp/README.md` 与 `apps/desktop/mcp.json`。
 
-## MCP 自检脚本（context7/serena）
-
-前置：
-- 构建主进程：`npm run build:electron --workspace=@mindforge/desktop`
-
-运行：
-- 最简：`npm run smoke:mcp --workspace=@mindforge/desktop`（默认仅测试 `context7`，并跳过 Agent）
-- 常用参数：
-  - `--id <serverId>`：仅测某个 MCP（如 `context7`、`serena`）
-  - `--prompt <中文提示>`：Agent 端到端提示词
-  - `--skip-agent`：只做 MCP 直连（列工具 + context7 两个工具调用）
-  - `--debug`：打印详细日志
-  - `--config <path>`：指定 mcp.json（默认 `apps/desktop/mcp.json` 或 `MF_MCP_CONFIG`）
-  - `--query <q>`：context7 解析库名（默认 `vercel/next.js`）
-  - `--topic <t>`：context7 文档主题（默认 `routing`）
-  - `--tokens <n>`：context7 文档 token 上限（默认 800）
-  - `--inject`：将工具结果注入上下文并单轮调用 LLM（推荐开启）
-  - `--placement <system|user-prepend|user-append>`：上下文注入位置（默认 system）
-  - `--maxctx <n>`：注入上下文最大字符数（默认 3000）
-  - `--sys-prefix <text>`：自定义 system 前缀说明
-
-环境变量：
-- `AI_PROVIDER=gemini`（或 `openai` 等）；`AI_API_KEY`/`GEMINI_API_KEY`/`GOOGLE_API_KEY` 之一必需
-- `MF_MCP_CONFIG` 可覆盖 mcp.json 路径
