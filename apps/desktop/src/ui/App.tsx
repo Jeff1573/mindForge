@@ -29,6 +29,7 @@ import Header from './layout/Header';
 import AgentLogOutline from './agent/AgentLogOutline';
 import FinalResultPanel from './agent/FinalResultPanel';
 import type { AgentFinalResultEvent, AgentLogStep } from '@mindforge/shared';
+import useAutoScroll from './hooks/useAutoScroll';
 
 // 注：此组件仅展示 UI。与 Electron 主进程的实际交互（选择目录、生成报告）
 // 需要你在 renderer 里通过 IPC 暴露方法，例如：window.api.selectDirectory() / window.api.generateReport(path)
@@ -53,9 +54,16 @@ export default function App() {
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 日志容器 ref：用于自动滚动到底部（悬停暂停）
+  const logBoxRefMain = useRef<HTMLDivElement>(null);
+  const logBoxRefDemo = useRef<HTMLDivElement>(null);
 
   const canUseWebkitDir = useMemo(() => typeof document !== "undefined", []);
   const { token } = theme.useToken();
+
+  // 尾随：当有新日志追加时自动滚动至底部；用户鼠标悬停时暂停。
+  useAutoScroll(logBoxRefMain, [agentLogs.length]);
+  useAutoScroll(logBoxRefDemo, [agentLogs.length]);
 
   // 首屏：从 localStorage 恢复上次选择
   useEffect(() => {
@@ -361,7 +369,8 @@ export default function App() {
                 }}
               >
                 <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>Agent 执行日志</div>
-                <div style={{ maxHeight: 240, overflow: 'auto' }}>
+                {/* 自动滚动容器：当 agentLogs 追加时，若未悬停则瞬时滚动到底部 */}
+                <div style={{ maxHeight: 240, overflow: 'auto' }} ref={logBoxRefMain}>
                   <List
                     size="small"
                     dataSource={agentLogs}
@@ -503,7 +512,8 @@ export default function App() {
               }}
             >
               <div style={{ fontSize: 12, color: token.colorTextSecondary, marginBottom: 6 }}>Agent 执行日志</div>
-              <div style={{ maxHeight: 240, overflow: 'auto' }}>
+              {/* 演示卡片内的同款日志容器（默认隐藏 display: none） */}
+              <div style={{ maxHeight: 240, overflow: 'auto' }} ref={logBoxRefDemo}>
                 <List
                   size="small"
                   dataSource={agentLogs}
