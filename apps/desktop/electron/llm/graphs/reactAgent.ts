@@ -51,12 +51,19 @@ function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageM
     // OpenAI 分支：仅在此分支支持 OPENAI_*；优先级 OPENAI_* > AI_*
     const apiKey = (env.OPENAI_API_KEY ?? env.AI_API_KEY) as string | undefined;
     if (!apiKey) throw new Error('未配置 OPENAI_API_KEY / AI_API_KEY，无法初始化 OpenAI 模型');
-    const model = (env.OPENAI_MODEL ?? env.AI_MODEL ?? 'gpt-40-mini')!.trim();
-    const baseURL = (env.OPENAI_BASE_URL ?? env.AI_BASE_URL)?.trim();
+    const model = (env.OPENAI_MODEL ?? env.AI_MODEL ?? 'gpt-4o-mini')!.trim();
+    const baseURLRaw = (env.OPENAI_BASE_URL ?? env.AI_BASE_URL)?.trim();
+
+    // 绝对 URL 校验 + 归一化：将 /v1/chat/completions|/v1/responses 规整为 /v1
+    const baseURL = normalizeOpenAIBaseURL(baseURLRaw);
+
+    // useResponsesApi：环境变量优先，其次由上层（MCP）需求决定，否则默认 false（Chat Completions）
+    const envFlag = parseBooleanFlag(String((env as any).OPENAI_USE_RESPONSES_API ?? ''));
+    const useResponsesApi = envFlag !== undefined ? envFlag : (opts?.openAiUseResponsesApi ?? false);
 
     if (DEBUG) {
       const baseHint = baseURL ? new URL(baseURL).origin + new URL(baseURL).pathname : '(默认 openai)';
-      console.log(`[LLM] provider=openai model=${model} base=${baseHint} key=${mask(apiKey)}`);
+      console.log(`[LLM] provider=openai model=${model} base=${baseHint} key=${mask(apiKey)} mode=${useResponsesApi ? 'responses' : 'chat'}`);
     }
     return new ChatOpenAI({
       apiKey,
@@ -64,8 +71,8 @@ function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageM
       temperature: 0,
       maxRetries: 2,
       configuration: baseURL ? { baseURL } : undefined,
-      useResponsesApi: !!opts?.openAiUseResponsesApi,
-    });
+      useResponsesApi,
+    } as any);
   }
 
   if (provider === 'gemini' || provider === 'google') {
@@ -84,6 +91,34 @@ function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageM
 
   // 其他提供商：按推荐暂未实现（避免引入新依赖/配置），提示用户调整
   throw new Error(`当前仅支持 AI_PROVIDER=openai 或 gemini/google。检测到: ${provider}`);
+}
+
+// --- 工具函数：与 openai provider 保持一致 ---
+function parseBooleanFlag(input?: string): boolean | undefined {
+  if (input == null) return undefined;
+  const v = String(input).trim().toLowerCase();
+  if (!v) return undefined;
+  if (['1', 'true', 'yes', 'on'].includes(v)) return true;
+  if (['0', 'false', 'no', 'off'].includes(v)) return false;
+  return undefined;
+}
+
+function normalizeOpenAIBaseURL(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const s = raw.trim();
+  if (!s) return undefined;
+  if (!/^https?:\/\//i.test(s)) {
+    throw new Error('OPENAI_BASE_URL 必须为绝对 URL，例如 https://api.openai.com/v1 或 http://your-proxy:port/v1');
+  }
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch (_) {
+    throw new Error('OPENAI_BASE_URL 非法：无法解析为 URL');
+  }
+  let pathname = u.pathname.replace(/\/+$/, '');
+  pathname = pathname.replace(/\/(chat\/completions|responses)$/i, '');
+  return `${u.origin}${pathname || '/v1'}`;
 }
 
 // 中文注释：提供简单封装，确保全局只初始化一次 Agent。

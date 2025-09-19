@@ -30,6 +30,20 @@ function maskKey(key) {
 }
 
 /** 判定字符串是否看起来是完整的 /v1 Base URL */
+// 归一化：将误写到 /v1/chat/completions 或 /v1/responses 的 baseURL 收敛到 /v1
+function normalizeV1BaseURL(url) {
+  if (!url) return url;
+  try {
+    const u = new URL(/^https?:\/\//i.test(url) ? url : 'http://invalid');
+    let p = u.pathname.replace(/\/+$/, '');
+    p = p.replace(/\/(chat\/completions|responses)$/i, '');
+    if (!/^https?:\/\//i.test(url)) return url; // 非绝对 URL，保持原样，后续检测给出提示
+    return `${u.origin}${p || '/v1'}`;
+  } catch (_) {
+    return url;
+  }
+}
+
 function looksLikeV1BaseURL(url) {
   if (!url) return false;
   try {
@@ -161,11 +175,11 @@ async function checkDesktopConsistency() {
 // ---------------------------
 // 配置解析（与桌面 provider 逻辑保持一致）
 // - provider: AI_PROVIDER
-// - model: OPENAI_MODEL > AI_MODEL > 默认 gpt-40-mini（仅 openai 分支）
+// - model: OPENAI_MODEL > AI_MODEL > 默认 gpt-4o-mini（仅 openai 分支）
 // - apiKey: OPENAI_API_KEY > AI_API_KEY
 // - baseURL: OPENAI_BASE_URL > AI_BASE_URL（需包含 /v1 前缀）
 // ---------------------------
-const DEFAULT_OPENAI_MODEL = 'gpt-40-mini';
+const const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';;
 
 function resolveEffectiveConfig() {
   const env = process.env;
@@ -173,7 +187,9 @@ function resolveEffectiveConfig() {
   const model = (env.OPENAI_MODEL || env.AI_MODEL || (provider === 'openai' ? DEFAULT_OPENAI_MODEL : '') || '').trim();
   const apiKey = (env.OPENAI_API_KEY || env.AI_API_KEY || '').trim();
   const baseURLRaw = (env.OPENAI_BASE_URL || env.AI_BASE_URL || '').trim();
-  const baseURL = baseURLRaw || 'https://api.openai.com/v1';
+
+  // 归一化 baseURL：强烈建议形如 https(s)://host[:port]/v1
+  const baseURL = normalizeV1BaseURL(baseURLRaw || 'https://api.openai.com/v1');
 
   const sources = {
     provider: 'AI_PROVIDER',
@@ -204,7 +220,16 @@ function printConfig(config) {
 // 连通性测试：/v1/chat/completions
 // ---------------------------
 async function testChatCompletion({ baseURL, apiKey, model }) {
-  const url = `${baseURL.replace(/\/+$/, '')}/chat/completions`;
+  // 预检查：必须绝对 URL 且包含 /v{n}
+  if (!/^https?:\/\//i.test(baseURL)) {
+    return { ok: false, url: baseURL, hint: 'baseURL 必须为绝对 URL，例如 https://host/v1' };
+  }
+  if (!/\/v\d+\/?$/.test(new URL(baseURL).pathname)) {
+    return { ok: false, url: baseURL, hint: 'baseURL 应以 /v1 结尾，避免叠加路径导致 404' };
+  }
+
+  const base = baseURL.replace(/\/+$/, '');
+  const url = `${base}/chat/completions`;
   const payload = {
     model,
     messages: [{ role: 'user', content: 'ping' }],
@@ -344,6 +369,7 @@ function classifyNetworkError(err, url) {
       console.log(JSON.stringify(r2, null, 2));
     }
     if (r2.ok) {
+      console.log(JSON.stringify(r2.body.data, null, 2));
       console.log(`\n[通过] models 列表 OK（${r2.ms}ms），条目数：${r2.count}`);
     } else {
       console.warn(`\n[失败] models：${r2.hint || '未知错误'}`);
