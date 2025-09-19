@@ -34,6 +34,9 @@ var envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   // 新增：OpenAI 专属模型名（在 openai 分支下优先于 AI_MODEL）
   OPENAI_MODEL: z.string().min(1, "OPENAI_MODEL \u4E0D\u80FD\u4E3A\u7A7A").optional(),
+  // 新增：控制是否使用 OpenAI Responses API（与 Chat Completions 互斥）。
+  // 取值：'1'|'0'|'true'|'false'|'yes'|'no'|'on'|'off'（不区分大小写），校验放到调用方做。
+  OPENAI_USE_RESPONSES_API: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GOOGLE_API_KEY: z.string().min(1, "GOOGLE_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY \u4E0D\u80FD\u4E3A\u7A7A").optional(),

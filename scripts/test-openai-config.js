@@ -179,7 +179,7 @@ async function checkDesktopConsistency() {
 // - apiKey: OPENAI_API_KEY > AI_API_KEY
 // - baseURL: OPENAI_BASE_URL > AI_BASE_URL（需包含 /v1 前缀）
 // ---------------------------
-const const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';;
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 
 function resolveEffectiveConfig() {
   const env = process.env;
