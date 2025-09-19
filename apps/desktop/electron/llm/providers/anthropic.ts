@@ -5,7 +5,7 @@ import { runtimeImport, toLangChainTuples, extractContentText, asTextStream } fr
 
 type ChatAnthropicImport = typeof import('@langchain/anthropic');
 
-type AnthropicClientInit = {
+export type AnthropicClientInit = {
   model?: string;
   apiKey?: string;
   baseURL?: string;
@@ -77,4 +77,39 @@ export async function createAnthropicClient(init: AnthropicClientInit = {}): Pro
       return asTextStream(stream as AsyncIterable<{ content: unknown }>);
     }
   };
+}
+
+/**
+ * 返回 LangChain 的 `ChatAnthropic` 实例，供需要 `LanguageModelLike` 的调用方使用。
+ * 与 `createAnthropicClient` 行为与环境解析保持一致。
+ */
+export async function createAnthropicLangChainModel(init: AnthropicClientInit = {}) {
+  const env = getEnv();
+  const model = init.model ?? env.AI_MODEL ?? DEFAULT_MODEL;
+  const apiKey = init.apiKey ?? env.AI_API_KEY ?? env.ANTHROPIC_API_KEY;
+  const anthropicApiUrl = init.baseURL ?? env.AI_BASE_URL;
+  const temperature = init.temperature ?? DEFAULT_TEMPERATURE;
+  const maxRetries = init.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const maxTokens = init.maxTokens;
+
+  if (!apiKey) throw new LLMConfigurationError('Anthropic 需配置 AI_API_KEY 或 ANTHROPIC_API_KEY');
+  if (!model) throw new LLMConfigurationError('Anthropic 需配置模型名称 (AI_MODEL 或参数 model)');
+
+  const { ChatAnthropic } = await runtimeImport<ChatAnthropicImport>('@langchain/anthropic');
+
+  const DEBUG = String(process.env.LLM_DEBUG || '').trim() === '1';
+  const mask = (s?: string) => (s ? s.replace(/.(?=.{4})/g, '*') : '');
+  if (DEBUG) {
+    const baseHint = anthropicApiUrl ?? '(默认 anthropic)';
+    console.log(`[LLM] provider=anthropic model=${model} base=${baseHint} key=${mask(apiKey)}`);
+  }
+
+  return new ChatAnthropic({
+    apiKey,
+    model,
+    temperature: temperature ?? undefined,
+    maxTokens: maxTokens,
+    maxRetries,
+    anthropicApiUrl,
+  });
 }

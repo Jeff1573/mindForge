@@ -5,7 +5,7 @@ import { runtimeImport, toLangChainTuples, extractContentText, asTextStream } fr
 
 type ChatGroqImport = typeof import('@langchain/groq');
 
-type GroqClientInit = {
+export type GroqClientInit = {
   model?: string;
   apiKey?: string;
   baseURL?: string;
@@ -75,4 +75,39 @@ export async function createGroqClient(init: GroqClientInit = {}): Promise<LLMCl
       return asTextStream(stream as AsyncIterable<{ content: unknown }>);
     }
   };
+}
+
+/**
+ * 返回 LangChain 的 `ChatGroq` 实例，供需要 `LanguageModelLike` 的调用方使用。
+ * 与 `createGroqClient` 的环境解析与默认值保持一致。
+ */
+export async function createGroqLangChainModel(init: GroqClientInit = {}) {
+  const env = getEnv();
+  const model = init.model ?? env.AI_MODEL ?? DEFAULT_MODEL;
+  const apiKey = init.apiKey ?? env.AI_API_KEY ?? env.GROQ_API_KEY;
+  const baseUrl = init.baseURL ?? env.AI_BASE_URL;
+  const temperature = init.temperature ?? DEFAULT_TEMPERATURE;
+  const maxRetries = init.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const maxTokens = init.maxTokens;
+
+  if (!apiKey) throw new LLMConfigurationError('Groq 需配置 AI_API_KEY 或 GROQ_API_KEY');
+  if (!model) throw new LLMConfigurationError('Groq 需配置模型名称 (AI_MODEL 或参数 model)');
+
+  const { ChatGroq } = await runtimeImport<ChatGroqImport>('@langchain/groq');
+
+  const DEBUG = String(process.env.LLM_DEBUG || '').trim() === '1';
+  const mask = (s?: string) => (s ? s.replace(/.(?=.{4})/g, '*') : '');
+  if (DEBUG) {
+    const baseHint = baseUrl ?? '(默认 groq)';
+    console.log(`[LLM] provider=groq model=${model} base=${baseHint} key=${mask(apiKey)}`);
+  }
+
+  return new ChatGroq({
+    apiKey,
+    model,
+    temperature,
+    maxTokens,
+    maxRetries,
+    baseUrl,
+  });
 }

@@ -1,4 +1,5 @@
 import { getEnv, type AIProvider } from '@mindforge/shared';
+import type { LanguageModelLike } from '@langchain/core/language_models/base';
 import {
   LLMConfigurationError,
   LLMProviderNotImplementedError,
@@ -9,10 +10,10 @@ import {
   type LLMMessage,
   type LLMStreamParams
 } from './types';
-import { createOpenAIClient } from './providers/openai';
-import { createAnthropicClient } from './providers/anthropic';
-import { createGoogleClient } from './providers/google';
-import { createGroqClient } from './providers/groq';
+import { createOpenAIClient, createOpenAILangChainModel } from './providers/openai';
+import { createAnthropicClient, createAnthropicLangChainModel } from './providers/anthropic';
+import { createGoogleClient, createGoogleLangChainModel } from './providers/google';
+import { createGroqClient, createGroqLangChainModel } from './providers/groq';
 import { runtimeImport, extractContentText } from './utils/langchain';
 import { loadRolePrompt } from '../prompts/loader';
 
@@ -45,6 +46,38 @@ function shouldBypassCache(opts?: FactoryOptions) {
 function stripProvider(opts: FactoryOptions): ProviderInitOptions {
   const { provider: _provider, roleId: _roleId, ...rest } = opts;
   return rest;
+}
+
+// ========== LangChain Model 工厂 ==========
+/**
+ * 供需要 `LanguageModelLike` 的调用方（如 LangGraph Agent）使用。
+ * - 基于 `AI_PROVIDER` 路由到各 provider 的 LangChain 模型构建器。
+ * - `openaiUseResponsesApi` 仅在 provider=openai 时生效，其他提供商忽略。
+ */
+export type LangChainFactoryOptions = Omit<FactoryOptions, 'roleId'> & {
+  openaiUseResponsesApi?: boolean;
+};
+
+export async function getLangChainModel(opts: LangChainFactoryOptions = {}): Promise<LanguageModelLike> {
+  const env = getEnv();
+  const provider = opts.provider ?? env.AI_PROVIDER;
+  const init = { ...opts } as any;
+  delete init.provider;
+  delete init.roleId;
+
+  switch (provider) {
+    case 'openai':
+      return createOpenAILangChainModel({ ...init, useResponsesApi: opts.openaiUseResponsesApi });
+    case 'anthropic':
+      return createAnthropicLangChainModel(init);
+    case 'google':
+    case 'gemini':
+      return createGoogleLangChainModel(init);
+    case 'groq':
+      return createGroqLangChainModel(init);
+    default:
+      throw new LLMProviderNotImplementedError(provider);
+  }
 }
 
 async function createClientFromEnv(provider: AIProvider, opts: FactoryOptions = {}): Promise<LLMClient> {

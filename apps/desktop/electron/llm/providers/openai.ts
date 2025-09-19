@@ -5,7 +5,7 @@ import { runtimeImport, toLangChainTuples, extractContentText, asTextStream } fr
 
 type ChatOpenAIImport = typeof import('@langchain/openai');
 
-type OpenAIClientInit = {
+export type OpenAIClientInit = {
   model?: string;
   apiKey?: string;
   baseURL?: string;
@@ -89,6 +89,48 @@ export async function createOpenAIClient(init: OpenAIClientInit = {}): Promise<L
       return asTextStream(stream as AsyncIterable<{ content: unknown }>);
     },
   };
+}
+
+/**
+ * 构建并返回 LangChain 的 `ChatOpenAI` 实例（供需要 `LanguageModelLike` 的调用方使用）。
+ * - 统一从本 provider 解析环境与默认值，保持“单一事实源”。
+ * - 与 `createOpenAIClient` 使用同一套参数与行为（含 Responses API 开关与 baseURL 归一化）。
+ */
+export async function createOpenAILangChainModel(init: OpenAIClientInit = {}) {
+  const env = getEnv();
+  const model = init.model ?? env.OPENAI_MODEL ?? env.AI_MODEL ?? DEFAULT_MODEL;
+  const apiKey = init.apiKey ?? env.OPENAI_API_KEY ?? env.AI_API_KEY;
+  const baseURLRaw = (init.baseURL ?? env.OPENAI_BASE_URL ?? env.AI_BASE_URL)?.trim();
+  const temperature = init.temperature ?? DEFAULT_TEMPERATURE;
+  const maxRetries = init.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const useResponsesApi =
+    typeof init.useResponsesApi === 'boolean'
+      ? init.useResponsesApi
+      : parseBooleanFlag(String((env as any).OPENAI_USE_RESPONSES_API ?? '')) ?? false;
+
+  if (!apiKey) throw new LLMConfigurationError('OpenAI 需配置 AI_API_KEY 或 OPENAI_API_KEY');
+  if (!model) throw new LLMConfigurationError('OpenAI 需配置模型名称 (OPENAI_MODEL / AI_MODEL 或参数 model)');
+
+  const baseURL = normalizeOpenAIBaseURL(baseURLRaw);
+  const { ChatOpenAI } = await runtimeImport<ChatOpenAIImport>('@langchain/openai');
+
+  // 调试输出（脱敏），与旧逻辑保持一致
+  const DEBUG = String(process.env.LLM_DEBUG || '').trim() === '1';
+  const mask = (s?: string) => (s ? s.replace(/.(?=.{4})/g, '*') : '');
+  if (DEBUG) {
+    const baseHint = baseURL ? new URL(baseURL).origin + new URL(baseURL).pathname : '(默认 openai)';
+    console.log(`[LLM] provider=openai model=${model} base=${baseHint} key=${mask(apiKey)} mode=${useResponsesApi ? 'responses' : 'chat'}`);
+  }
+
+  const modelInstance = new ChatOpenAI({
+    apiKey,
+    model,
+    temperature,
+    maxRetries,
+    configuration: baseURL ? { baseURL } : undefined,
+    useResponsesApi,
+  });
+  return modelInstance;
 }
 
 // -------- 内部工具：flag/baseURL 处理 --------

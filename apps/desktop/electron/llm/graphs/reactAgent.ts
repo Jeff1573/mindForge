@@ -17,10 +17,7 @@
  * 关键环境变量：AI_PROVIDER、AI_MODEL、OPENAI_API_KEY、GOOGLE_API_KEY、GEMINI_API_KEY、
  * AI_API_KEY、AI_BASE_URL；以及 mcp.json（定义远程/本地工具）。
  */
-import { getEnv } from '@mindforge/shared';
-import { ChatOpenAI } from '@langchain/openai';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import type { LanguageModelLike } from '@langchain/core/language_models/base';
+import { getLangChainModel } from '../factory';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { loadRolePrompt } from '../../prompts/loader';
 import type { BaseMessageLike } from '@langchain/core/messages';
@@ -39,87 +36,9 @@ async function resolveAgentSystemPrompt(): Promise<string> {
 }
 
 // 中文注释：根据环境变量动态选择 LLM（OpenAI 或 Gemini）。
-function createLLMFromEnv(opts?: { openAiUseResponsesApi?: boolean }): LanguageModelLike {
-  const env = getEnv();
-  const provider = (env.AI_PROVIDER || 'gemini').trim();
-
-  // 可选：调试摘要（脱敏），通过 LLM_DEBUG=1 开关
-  const DEBUG = String(process.env.LLM_DEBUG || '').trim() === '1';
-  const mask = (s?: string) => (s ? s.replace(/.(?=.{4})/g, '*') : '');
-
-  if (provider === 'openai') {
-    // OpenAI 分支：仅在此分支支持 OPENAI_*；优先级 OPENAI_* > AI_*
-    const apiKey = (env.OPENAI_API_KEY ?? env.AI_API_KEY) as string | undefined;
-    if (!apiKey) throw new Error('未配置 OPENAI_API_KEY / AI_API_KEY，无法初始化 OpenAI 模型');
-    const model = (env.OPENAI_MODEL ?? env.AI_MODEL ?? 'gpt-4o-mini')!.trim();
-    const baseURLRaw = (env.OPENAI_BASE_URL ?? env.AI_BASE_URL)?.trim();
-
-    // 绝对 URL 校验 + 归一化：将 /v1/chat/completions|/v1/responses 规整为 /v1
-    const baseURL = normalizeOpenAIBaseURL(baseURLRaw);
-
-    // useResponsesApi：环境变量优先，其次由上层（MCP）需求决定，否则默认 false（Chat Completions）
-    const envFlag = parseBooleanFlag(String((env as any).OPENAI_USE_RESPONSES_API ?? ''));
-    const useResponsesApi = envFlag !== undefined ? envFlag : (opts?.openAiUseResponsesApi ?? false);
-
-    if (DEBUG) {
-      const baseHint = baseURL ? new URL(baseURL).origin + new URL(baseURL).pathname : '(默认 openai)';
-      console.log(`[LLM] provider=openai model=${model} base=${baseHint} key=${mask(apiKey)} mode=${useResponsesApi ? 'responses' : 'chat'}`);
-    }
-    return new ChatOpenAI({
-      apiKey,
-      model,
-      temperature: 0,
-      maxRetries: 2,
-      configuration: baseURL ? { baseURL } : undefined,
-      useResponsesApi,
-    } as any);
-  }
-
-  if (provider === 'gemini' || provider === 'google') {
-    // Gemini/Google 分支：仅使用通用 AI_API_KEY/AI_MODEL，不读取 GOOGLE_API_KEY/GEMINI_API_KEY
-    const apiKey = env.AI_API_KEY as string | undefined;
-    if (!apiKey) throw new Error('未配置 AI_API_KEY，无法初始化 Gemini/Google 模型');
-    const model = (env.AI_MODEL ?? 'gemini-1.5-flash').trim();
-    if (DEBUG) console.log(`[LLM] provider=${provider} model=${model} key=${mask(apiKey)}`);
-    return new ChatGoogleGenerativeAI({
-      apiKey,
-      model,
-      temperature: 0,
-      maxRetries: 2,
-    });
-  }
-
-  // 其他提供商：按推荐暂未实现（避免引入新依赖/配置），提示用户调整
-  throw new Error(`当前仅支持 AI_PROVIDER=openai 或 gemini/google。检测到: ${provider}`);
-}
+// 说明：模型实例创建统一下沉到 providers + factory，避免配置分歧。
 
 // --- 工具函数：与 openai provider 保持一致 ---
-function parseBooleanFlag(input?: string): boolean | undefined {
-  if (input == null) return undefined;
-  const v = String(input).trim().toLowerCase();
-  if (!v) return undefined;
-  if (['1', 'true', 'yes', 'on'].includes(v)) return true;
-  if (['0', 'false', 'no', 'off'].includes(v)) return false;
-  return undefined;
-}
-
-function normalizeOpenAIBaseURL(raw?: string): string | undefined {
-  if (!raw) return undefined;
-  const s = raw.trim();
-  if (!s) return undefined;
-  if (!/^https?:\/\//i.test(s)) {
-    throw new Error('OPENAI_BASE_URL 必须为绝对 URL，例如 https://api.openai.com/v1 或 http://your-proxy:port/v1');
-  }
-  let u: URL;
-  try {
-    u = new URL(s);
-  } catch (_) {
-    throw new Error('OPENAI_BASE_URL 非法：无法解析为 URL');
-  }
-  let pathname = u.pathname.replace(/\/+$/, '');
-  pathname = pathname.replace(/\/(chat\/completions|responses)$/i, '');
-  return `${u.origin}${pathname || '/v1'}`;
-}
 
 // 中文注释：提供简单封装，确保全局只初始化一次 Agent。
 export async function getReactAgent(): Promise<ReactAgent> {
@@ -129,8 +48,8 @@ export async function getReactAgent(): Promise<ReactAgent> {
   const { ensureMcpRuntime } = await import('../mcp/runtime');
   const mcp = await ensureMcpRuntime();
 
-  // OpenAI + Remote MCP 需要 useResponsesApi
-  const llmBase = createLLMFromEnv({ openAiUseResponsesApi: mcp.needsResponsesApi });
+  // 统一从工厂获取 LangChain 模型；当 Remote MCP 需要时，为 OpenAI 开启 Responses API
+  const llmBase = await getLangChainModel({ openaiUseResponsesApi: mcp.needsResponsesApi });
   // 若存在 Remote MCP 定义且底层支持 bindTools，则绑定
   const llm = (typeof (llmBase as any).bindTools === 'function' && mcp.remoteDefs.length > 0)
     ? (llmBase as any).bindTools(mcp.remoteDefs)
