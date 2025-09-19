@@ -59,6 +59,16 @@ export async function getReactAgent(): Promise<ReactAgent> {
   return cachedAgent as ReactAgent;
 }
 
+// 不加载mcp的agent
+export async function getReactAgentWithoutMcp(): Promise<ReactAgent> {
+  if (cachedAgent) return cachedAgent;
+  const systemPrompt = await resolveAgentSystemPrompt();
+  const llm = await getLangChainModel();
+  cachedAgent = createReactAgent({ llm: llm, prompt: systemPrompt, tools: [] });
+  return cachedAgent as ReactAgent;
+}
+
+
 export type ReactAgentInput = {
   messages: BaseMessageLike[];
 };
