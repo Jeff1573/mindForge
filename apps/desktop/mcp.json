@@ -5,7 +5,9 @@
       "headers": {
         "CONTEXT7_API_KEY": "ctx7sk-5f11de41-448d-48ff-8a2e-56b50439f8fc"
       },
-      "type": "http"
+      "type": "http",
+      "automaticSSEFallback": true,
+      "reconnect": { "enabled": true, "maxAttempts": 5, "delayMs": 2000 }
     },
     "serena": {
       "command": "uvx",
@@ -17,7 +19,9 @@
         "--enable-web-dashboard",
         "false"
       ],
-      "type": "stdio"
+      "type": "stdio",
+      "stderr": "inherit",
+      "restart": { "enabled": true, "maxAttempts": 3, "delayMs": 1000 }
     }
   }
 }

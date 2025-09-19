@@ -14,7 +14,7 @@ function isDev(): boolean {
 
 /**
  * 并发安全地初始化 MCP Runtime（只初始化一次）。
- * - 首次调用：读取 mcp.json，经适配后返回 { localTools, remoteDefs, needsResponsesApi, dispose? }
+ * - 首次调用：读取 mcp.json，经适配后返回 { tools, dispose? }
  * - 后续调用：复用缓存；并发调用复用同一 promise。
  */
 export async function ensureMcpRuntime(): Promise<McpIntegrationResult> {
@@ -26,9 +26,7 @@ export async function ensureMcpRuntime(): Promise<McpIntegrationResult> {
     const res = await resolveMcpForLangChain();
     cached = res;
     if (isDev()) console.log('[mcp-runtime] init ready', {
-      localTools: res.localTools?.length ?? 0,
-      remoteDefs: res.remoteDefs?.length ?? 0,
-      needsResponsesApi: !!res.needsResponsesApi,
+      tools: res.tools?.length ?? 0,
     });
     return res;
   })();

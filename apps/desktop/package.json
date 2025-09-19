@@ -49,6 +49,8 @@
     "prompt:print": "node scripts/print-prompt.cjs",
     
     "mcp:demo": "tsx electron/mcp/demo.ts",
+    "llm:test": "tsx electron/llm/scripts/test-llm.ts",
+    "agent:test": "tsx electron/llm/scripts/test-agent.ts",
     "check:mcp": "tsc -p tsconfig.mcp.json --noEmit"
   }
 }

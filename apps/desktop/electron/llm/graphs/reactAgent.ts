@@ -48,15 +48,12 @@ export async function getReactAgent(): Promise<ReactAgent> {
   const { ensureMcpRuntime } = await import('../mcp/runtime');
   const mcp = await ensureMcpRuntime();
 
-  // 统一从工厂获取 LangChain 模型；当 Remote MCP 需要时，为 OpenAI 开启 Responses API
-  const llmBase = await getLangChainModel({ openaiUseResponsesApi: mcp.needsResponsesApi });
-  // 若存在 Remote MCP 定义且底层支持 bindTools，则绑定
-  const llm = (typeof (llmBase as any).bindTools === 'function' && mcp.remoteDefs.length > 0)
-    ? (llmBase as any).bindTools(mcp.remoteDefs)
-    : llmBase;
+  // 统一从工厂获取 LangChain 模型
+  // 变更说明（2025-09-19）：统一本地直连 MCP，不再使用任何 Remote MCP/bindTools 路径。
+  const llm = await getLangChainModel();
 
   // 最小实现：仅将本地（stdio/http-本地）工具注入；Remote MCP 由 OpenAI 托管
-  const tools = [...mcp.localTools];
+  const tools = [...mcp.tools];
 
   cachedAgent = createReactAgent({ llm: llm, tools: tools, prompt: systemPrompt });
   return cachedAgent as ReactAgent;

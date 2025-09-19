@@ -19,6 +19,10 @@ import { loadRolePrompt } from '../prompts/loader';
 
 const clientCache: Partial<Record<string, LLMClient>> = {};
 
+/**
+ * 工厂入参（统一面向上层调用）。
+ * - 当 provider=openai 时，允许通过 `openaiUseResponsesApi` 显式切换 /v1/responses vs /v1/chat/completions。
+ */
 export type FactoryOptions = {
   provider?: AIProvider;
   model?: string;
@@ -28,6 +32,8 @@ export type FactoryOptions = {
   maxTokens?: number;
   maxRetries?: number;
   roleId?: string;
+  /** 仅对 provider=openai 生效：true => Responses API；false => Chat Completions；undefined => 由 env 决策 */
+  openaiUseResponsesApi?: boolean;
 };
 
 type ProviderInitOptions = Omit<FactoryOptions, 'provider' | 'roleId'>;
@@ -81,10 +87,13 @@ export async function getLangChainModel(opts: LangChainFactoryOptions = {}): Pro
 }
 
 async function createClientFromEnv(provider: AIProvider, opts: FactoryOptions = {}): Promise<LLMClient> {
-  const init = stripProvider(opts);
+  const init = stripProvider(opts) as any;
   switch (provider) {
-    case 'openai':
-      return createOpenAIClient(init);
+    case 'openai': {
+      // 将 openaiUseResponsesApi 映射为底层 createOpenAIClient 的 useResponsesApi
+      const { openaiUseResponsesApi, ...rest } = init;
+      return createOpenAIClient({ ...rest, useResponsesApi: openaiUseResponsesApi });
+    }
     case 'anthropic':
       return createAnthropicClient(init);
     case 'google':

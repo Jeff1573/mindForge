@@ -18,22 +18,42 @@ export type McpTransportConfig =
       args?: string[];
       cwd?: string;
       env?: Record<string, string>;
-      stderr?: 'inherit' | 'pipe' | number;
+      // 与 @langchain/mcp-adapters 对齐：Windows 兼容的 overlapped 以及常见枚举；不再接受 number 形式
+      stderr?: 'overlapped' | 'pipe' | 'ignore' | 'inherit';
+      // 进程自动重启（推荐默认开启）：若缺省将由调用方设置默认值
+      restart?: Partial<{
+        enabled: boolean;
+        maxAttempts: number;
+        delayMs: number;
+      }>;
     })
   | ({ type: 'http' } & {
       url: string;
       headers?: Record<string, string>;
       sessionId?: string;
+      // 历史字段（向后兼容，调用方不会使用）：
       reconnection?: Partial<{
         maxReconnectionDelay: number;
         initialReconnectionDelay: number;
         reconnectionDelayGrowFactor: number;
         maxRetries: number;
       }>;
+      // 新字段：可流式 HTTP 的自动回退与重连（与 mcp-adapters 一致）
+      automaticSSEFallback?: boolean;
+      reconnect?: Partial<{
+        enabled: boolean;
+        maxAttempts: number;
+        delayMs: number;
+      }>;
     })
   | ({ type: 'sse' } & {
       url: string;
       headers?: Record<string, string>;
+      reconnect?: Partial<{
+        enabled: boolean;
+        maxAttempts: number;
+        delayMs: number;
+      }>;
     });
 
 export interface McpClientConfig {
@@ -77,12 +97,21 @@ const rawServerEntrySchema = z
     url: z.string().trim().min(1).optional(),
     headers: headersSchema.optional(),
     sessionId: z.string().trim().min(1).optional(),
-    reconnection: reconnectionSchema.optional(),
+    reconnection: reconnectionSchema.optional(), // 兼容旧字段（不会被新实现使用）
+    reconnect: z
+      .object({ enabled: z.boolean().optional(), maxAttempts: z.number().optional(), delayMs: z.number().optional() })
+      .partial()
+      .optional(),
+    automaticSSEFallback: z.boolean().optional(),
     command: z.string().trim().min(1).optional(),
     args: z.array(z.string()).optional(),
     cwd: z.string().trim().min(1).optional(),
     env: headersSchema.optional(),
-    stderr: z.union([z.literal('inherit'), z.literal('pipe'), z.number()]).optional(),
+    stderr: z.union([z.literal('overlapped'), z.literal('pipe'), z.literal('ignore'), z.literal('inherit')]).optional(),
+    restart: z
+      .object({ enabled: z.boolean().optional(), maxAttempts: z.number().optional(), delayMs: z.number().optional() })
+      .partial()
+      .optional(),
     client: clientInfoSchema,
   })
   .passthrough();
@@ -124,6 +153,7 @@ function toTransportConfig(serverId: string, entry: RawMcpServerEntry): McpTrans
       cwd: entry.cwd,
       env: entry.env,
       stderr: entry.stderr ?? 'inherit',
+      restart: entry.restart,
     };
   }
 
@@ -137,6 +167,8 @@ function toTransportConfig(serverId: string, entry: RawMcpServerEntry): McpTrans
       headers: entry.headers,
       sessionId: entry.sessionId,
       reconnection: entry.reconnection,
+      automaticSSEFallback: entry.automaticSSEFallback,
+      reconnect: entry.reconnect,
     };
   }
 
@@ -148,6 +180,7 @@ function toTransportConfig(serverId: string, entry: RawMcpServerEntry): McpTrans
       type: 'sse',
       url: entry.url,
       headers: entry.headers,
+      reconnect: entry.reconnect,
     };
   }
 

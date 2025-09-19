@@ -55,16 +55,29 @@ Electron 主进程在每个会话 `start/initialize` 完成后会向 stdout 打�
 ```json
 {
   "mcpServers": {
-    "context7": {\n      "type": "http",\n      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "ctx7sk-..."
-      }
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": { "CONTEXT7_API_KEY": "ctx7sk-..." },
+      "automaticSSEFallback": true,
+      "reconnect": { "enabled": true, "maxAttempts": 5, "delayMs": 2000 }
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--enable-web-dashboard", "false"],
+      "stderr": "inherit",
+      "restart": { "enabled": true, "maxAttempts": 3, "delayMs": 1000 }
     }
   }
 }
 ```
 
-> 注意：当 HTTP 服务端返回 4xx（例如不支持 Streamable HTTP）时，客户端会自动回退到 SSE 以保持兼容。
+> 默认值与推荐：
+> - http：`automaticSSEFallback=true`，`reconnect.enabled=true`（`maxAttempts=5`，`delayMs=2000`）。
+> - sse：同样支持 `reconnect`。
+> - stdio：`restart.enabled=true`（`maxAttempts=3`，`delayMs=1000`），`stderr='inherit'`；Windows 可选 `'overlapped'`。
+> - 注意：当 HTTP 服务端返回 4xx（例如不支持 Streamable HTTP）时，客户端会自动回退到 SSE 以保持兼容。
 
 ## 类型与实现约束（v1.18.0）
 

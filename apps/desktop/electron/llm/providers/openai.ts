@@ -2,6 +2,7 @@ import { getEnv } from '@mindforge/shared';
 import type { LLMCallOptions, LLMClient } from '../types';
 import { LLMConfigurationError } from '../types';
 import { runtimeImport, toLangChainTuples, extractContentText, asTextStream } from '../utils/langchain';
+import { ChatOpenAI } from '@langchain/openai';
 
 type ChatOpenAIImport = typeof import('@langchain/openai');
 
@@ -46,7 +47,7 @@ export async function createOpenAIClient(init: OpenAIClientInit = {}): Promise<L
   // 归一化并校验 baseURL：必须为绝对 URL；若误写到 /v1/chat/completions 或 /v1/responses，收敛为 /v1
   const baseURL = normalizeOpenAIBaseURL(baseURLRaw);
 
-  const { ChatOpenAI } = await runtimeImport<ChatOpenAIImport>('@langchain/openai');
+  // const { ChatOpenAI } = await runtimeImport<ChatOpenAIImport>('@langchain/openai');
 
   const modelInstance = new ChatOpenAI({
     apiKey,
@@ -112,7 +113,7 @@ export async function createOpenAILangChainModel(init: OpenAIClientInit = {}) {
   if (!model) throw new LLMConfigurationError('OpenAI 需配置模型名称 (OPENAI_MODEL / AI_MODEL 或参数 model)');
 
   const baseURL = normalizeOpenAIBaseURL(baseURLRaw);
-  const { ChatOpenAI } = await runtimeImport<ChatOpenAIImport>('@langchain/openai');
+  // const { ChatOpenAI } = await runtimeImport<ChatOpenAIImport>('@langchain/openai');
 
   // 调试输出（脱敏），与旧逻辑保持一致
   const DEBUG = String(process.env.LLM_DEBUG || '').trim() === '1';

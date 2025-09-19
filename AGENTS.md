@@ -28,3 +28,6 @@
   - 例：`feat(api): 添加 /env 路由`、`refactor(desktop-ui): 优化主题注入`。
 - PR 要求：清晰描述、关联 Issue、UI 变更附截图、自测步骤；合并前需通过 `npm run lint && npm run build && npm run smoke`。
 
+
+## 接口模块实现
+- 对于LangChain的库的使用方式，优先去LangChain官网查询最新文档的内容进行编写。可以使用`web_search`或者`context7`进行查询。
