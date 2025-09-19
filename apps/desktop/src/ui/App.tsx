@@ -150,6 +150,21 @@ export default function App() {
             if (saveRes?.ok && saveRes.fullPath) {
               setReportPath(saveRes.fullPath);
               message.success('报告已创建');
+              // 弹窗提示：报告生成成功
+              try {
+                Modal.success({
+                  title: '报告已生成',
+                  content: saveRes.fullPath,
+                  okText: '查看所在文件夹',
+                  onOk: () => {
+                    try {
+                      if ((window as any)?.api?.revealInFolder && saveRes.fullPath) {
+                        (window as any).api.revealInFolder(saveRes.fullPath);
+                      }
+                    } catch { /* noop */ }
+                  },
+                });
+              } catch { /* noop */ }
             } else {
               message.warning(`报告未写入：${saveRes?.message ?? '未知原因'}`);
             }
@@ -313,6 +328,23 @@ export default function App() {
                     try { localStorage.setItem('mf.agentLogOutline.enabled', v ? '1' : '0'); } catch { /* noop */ }
                   }}
                 />
+                <Divider type="vertical" style={{ margin: '0 8px' }} />
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={agentLoading ? <LoadingOutlined /> : <PlayCircleFilled />}
+                    loading={agentLoading}
+                    onClick={handleGenerate}
+                    disabled={!projectPath || agentLoading}
+                  >
+                    {agentLoading ? '执行中…' : '开始生成报告'}
+                  </Button>
+                  {agentLoading && (
+                    <Button danger icon={<StopOutlined />} onClick={handleCancel}>
+                      终止
+                    </Button>
+                  )}
+                </Space>
               </Space>
 
               {/* 日志大纲（默认折叠） + 最终结果（Markdown） */}
@@ -339,29 +371,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* 生成报告区：调用 Agent，最终返回时提示成功（无进度条） */}
+            {/* 生成结果区：成功提示 + 操作（复制 / 打开文件夹） */}
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography.Text type="secondary">输出格式：Markdown（.md）</Typography.Text>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={agentLoading ? <LoadingOutlined /> : <PlayCircleFilled />}
-                    loading={agentLoading}
-                    onClick={handleGenerate}
-                    disabled={!projectPath || agentLoading}
-                  >
-                    {agentLoading ? '执行中…' : '开始生成报告'}
-                  </Button>
-                  {agentLoading && (
-                    <Button danger icon={<StopOutlined />} onClick={handleCancel}>
-                      终止
-                    </Button>
-                  )}
-                </Space>
-              </div>
-
-              {/* 结果卡片：成功提示 + 操作（复制 / 打开文件夹） */}
               {reportPath && (
                 <div
                   style={{
