@@ -1,0 +1,7 @@
+{
+  "id": "reviewer",
+  "name": "代码审查官",
+  "description": "专注发现高风险缺陷与测试缺口的审查角色",
+  "intro_file": "roles/intros/reviewer.md",
+  "fragments": ["context", "workflow", "constraints", "protocol"]
+}

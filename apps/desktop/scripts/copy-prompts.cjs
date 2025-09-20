@@ -22,7 +22,16 @@ async function copyDir(src, dest) {
 
 async function main() {
   const root = path.resolve(__dirname, '..');
-  const src = path.resolve(root, 'electron/prompts');
+  const resolveSrc = () => {
+    const fromEnv = (process.env.MF_PROMPTS_DIR || '').trim();
+    if (fromEnv) return path.resolve(process.cwd(), fromEnv);
+    // 优先包内静态资源
+    const pkgPrompts = path.resolve(root, 'node_modules/@mindforge/agent/prompts');
+    if (fs.existsSync(pkgPrompts)) return pkgPrompts;
+    // 回退到源码目录（兼容旧结构）
+    return path.resolve(root, 'electron/prompts');
+  };
+  const src = resolveSrc();
   const dest = path.resolve(root, 'dist/prompts');
 
   if (!fs.existsSync(src)) {
@@ -37,4 +46,3 @@ main().catch((e) => {
   console.error('[copy-prompts] 失败：', e);
   process.exitCode = 1;
 });
-

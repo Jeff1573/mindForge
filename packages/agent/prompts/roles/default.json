@@ -1,0 +1,7 @@
+{
+  "id": "default",
+  "name": "默认助手",
+  "description": "面向通用对话的默认角色",
+  "intro_file": "roles/intros/default.md",
+  "fragments": ["context", "workflow", "constraints", "protocol"]
+}

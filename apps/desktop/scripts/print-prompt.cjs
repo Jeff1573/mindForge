@@ -53,6 +53,9 @@ function resolvePromptsRoot(opts) {
   const fromEnv = (process.env.MF_PROMPTS_DIR || '').trim();
   if (fromEnv) return path.resolve(cwd, fromEnv);
   if (opts.from === 'dist') return path.resolve(appRoot, 'dist/prompts');
+  // 优先使用包内 prompts
+  const pkgPrompts = path.resolve(appRoot, 'node_modules/@mindforge/agent/prompts');
+  if (fs.existsSync(pkgPrompts)) return pkgPrompts;
   return path.resolve(appRoot, 'electron/prompts');
 }
 
@@ -127,4 +130,3 @@ async function buildPrompt(root, roleId) {
   console.error('[print-prompt] 失败：', e.message || e);
   process.exit(1);
 });
-

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 // 类型仅用于声明，避免将主进程实现细节引入到预加载产物
-import type { LLMMessage } from './llm/types';
+import type { LLMMessage } from '@mindforge/agent';
 import type { AgentLogBatchResult } from '@mindforge/shared';
 import type { SessionSpec } from './mcp/sessionManager';
 import type { McpInitializeResult } from './mcp/sdkClient';

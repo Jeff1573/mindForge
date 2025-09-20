@@ -11,12 +11,16 @@
     "types": ["node", "electron"],
     "noEmit": false,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@mindforge/agent": ["../../packages/agent/dist/index.d.ts"],
+      "@mindforge/agent/*": ["../../packages/agent/dist/*"]
+    }
   },
   "include": [
     "electron/main.ts",
     "electron/preload.ts",
     "electron/mcp/**/*.ts",
-    "electron/llm/**/*.ts"
+    "electron/types/**/*.d.ts"
   ]
 }

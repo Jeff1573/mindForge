@@ -30,7 +30,14 @@ function dirExists(p) { try { return fs.existsSync(p); } catch { return false; }
 
 async function main() {
   const root = path.resolve(__dirname, '..');
-  const src = path.resolve(root, 'electron/prompts');
+  const resolveSrc = () => {
+    const fromEnv = (process.env.MF_PROMPTS_DIR || '').trim();
+    if (fromEnv) return path.resolve(process.cwd(), fromEnv);
+    const pkgPrompts = path.resolve(root, 'node_modules/@mindforge/agent/prompts');
+    if (dirExists(pkgPrompts)) return pkgPrompts;
+    return path.resolve(root, 'electron/prompts');
+  };
+  const src = resolveSrc();
   const dest = path.resolve(root, 'dist/prompts');
 
   if (!dirExists(src)) {
@@ -95,4 +102,3 @@ main().catch((e) => {
   console.error('[watch-prompts] 运行失败：', e);
   process.exit(1);
 });
-

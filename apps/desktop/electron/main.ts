@@ -14,9 +14,8 @@ try {
 import { McpSessionManager } from './mcp/sessionManager';
 import type { SessionSpec, SessionHandle } from './mcp/sessionManager';
 // LLM：最小接入（仅在主进程验证流式输出）
-import { runReactAgent } from './llm/reactAgentRunner';
-import { startReactAgentStream } from './llm/reactAgentStream';
-import type { LLMMessage } from './llm/types';
+import { runReactAgent, startReactAgentStream } from '@mindforge/agent';
+import type { LLMMessage } from '@mindforge/agent';
 import { disposeMcpRuntime } from './llm/mcp/runtime';
 
 // 中文注释：创建应用主窗口（自定义标题栏，渲染器使用 Vite）
@@ -357,15 +356,15 @@ app.whenReady().then(async () => {
     void (async () => {
       try {
         await startReactAgentStream(payload.messages, { threadId: payload.threadId }, {
-          onStep: (step) => {
+          onStep: (step: any) => {
             try { mainWindow?.webContents.send('agent:react:step', { runId, step }); } catch { /* noop */ }
           },
-          onFinal: (result) => {
+          onFinal: (result: any) => {
             try { mainWindow?.webContents.send('agent:react:final', { runId, result }); } catch { /* noop */ }
             // 流结束（含正常、错误、取消后友好收尾）：清理运行态
             agentRuns.delete(runId);
           },
-          onError: (err) => {
+          onError: (err: unknown) => {
             try { mainWindow?.webContents.send('agent:react:error', { runId, message: String(err) }); } catch { /* noop */ }
             // 发生错误：清理运行态
             agentRuns.delete(runId);
@@ -400,3 +399,4 @@ app.whenReady().then(async () => {
 
   // 清理：不再运行任何 smoke 自检逻辑。
 });
+

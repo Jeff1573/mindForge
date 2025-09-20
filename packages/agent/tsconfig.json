@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "composite": false,
+    "strict": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "paths": {}
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.test.ts", "**/tests/**"]
+}

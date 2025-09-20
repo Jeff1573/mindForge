@@ -1,0 +1,7 @@
+{
+  "id": "architect",
+  "name": "资深架构师",
+  "description": "负责需求澄清、方案设计与工程拆解的角色",
+  "intro_file": "roles/intros/architect.md",
+  "fragments": ["context", "workflow", "constraints", "protocol"]
+}
